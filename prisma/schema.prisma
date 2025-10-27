@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum KeyType {
+  ACCESS
+  REFRESH
+}
+
+model Airport {
+  id                Int       @id @default(autoincrement())
+  code              String    @unique @db.Char(4)
+  name              String
+  city              String
+  countryId         Int      
+  latitude          Float
+  longitude         Float
+  
+  country           Country   @relation(fields: [countryId], references: [id])
+  servicingAirlines Airline[] @relation("ServicedAirports")
+  routesFrom        Route[]   @relation("FromAirport")
+  routesTo          Route[]   @relation("ToAirport")
+}
+
+model Country {
+  id               Int       @id @default(autoincrement())
+  name             String    @unique
+  airports         Airport[]
+  airlinesBased    Airline[]
+}
+
+model Airline {
+  id                Int       @id @default(autoincrement())
+  name              String
+  baseCountryId     Int
+  
+  baseCountry       Country   @relation(fields: [baseCountryId], references: [id]) 
+  servicedAirports  Airport[] @relation("ServicedAirports")
+  operatedRoutes    Route[]
+}
+
+model Route {
+  id            Int     @id @default(autoincrement())
+  fromAirportId Int
+  toAirportId   Int    
+  airlineId     Int    
+
+  fromAirport Airport @relation("FromAirport", fields: [fromAirportId], references: [id], onDelete: Cascade)
+  toAirport   Airport @relation("ToAirport", fields: [toAirportId], references: [id], onDelete: Cascade)
+  operator    Airline @relation(fields: [airlineId], references: [id], onDelete: Cascade)
+  usedInItineraries ItinerarySegment[]
+
+  @@unique([fromAirportId, toAirportId, airlineId])
+}
+
+
+model Itinerary {
+  id                Int                     @id @default(autoincrement())
+  name              String           
+  totalDurationMin  Int?
+  
+  segments          ItinerarySegment[]
+}
+
+model ItinerarySegment {
+  itineraryId       Int
+  routeId           Int
+  order             Int
+
+  itinerary         Itinerary               @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  route             Route                   @relation(fields: [routeId], references: [id])
+
+  @@id([itineraryId, order])
+  @@unique([itineraryId, routeId, order])
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password       String
+  registeredAt   DateTime @default(now())
+  
+  tokens         UserToken[] 
+}
+
+model UserToken {
+  key            String   @unique @db.Text // Use @db.Text for long JWT strings
+  userId         String   
+  expirationDate DateTime
+  type           KeyType
+
+  user           User     @relation(fields: [userId], references: [id])
+
+  // Using composite primary key [userId, type]
+  @@id([userId, type]) 
+}
