@@ -164,7 +164,7 @@ const AirportDetailPage: React.FC = () => {
 
       <Grid container spacing={4}>
         <Grid size={12}>
-          <Box mt={4}>
+          <Box mt={{xs: 0, md: 2}}>
             <Paper elevation={0} sx={{ p: 3, border: (t) => `1px solid ${t.palette.divider}` }}>
               <Typography variant="h6" gutterBottom>
                 Location Map

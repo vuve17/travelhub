@@ -1,4 +1,8 @@
-# 🚀 Project Setup & Documentation
+# Stack used and reasoning
+
+I am most familiar with this tech stack, built around Next.js, React and PostgreSQL, as it provides a modern full-stack solution. React serves as the core UI library, chosen for its component-based architecture which allows for the creation of highly modular and easily maintainable interfaces. The application leverages Next.js as the full-featured framework, providing robust Server-Side Rendering (SSR) for performance and a unified TypeScript/JavaScript environment for both frontend and backend. Finally, PostgreSQL was selected for its standard reliability and data integrity, while Prisma (ORM) ensures secure, type-safe communication with the database.
+
+# Project Setup & Documentation
 
 This document provides all necessary instructions to set up, run, and understand the core status of the project.
 
@@ -33,6 +37,7 @@ Follow these steps sequentially to initialize the database and run the applicati
 
 2.  **Start Database Container**
     Starts the PostgreSQL database server in a Docker container in detached mode (`-d`).
+
     ```bash
     docker compose up -d
     ```
@@ -88,7 +93,7 @@ I covered most of the core requirements. Below are specific notes regarding proj
 
 * **Limitations:**
     * Cross-browser testing was not performed.
-    * Pagination is **only implemented for the Airport List** (`/protected/airports`) to demonstrate knowledge of the feature. Other lists (Airlines, etc.) would require a similar implementation.
+    * Pagination is **only implemented for the Airport List** (`/protected/airports`) to demonstrate knowledge of the feature. Other lists (Airlines, etc.) would require a similar implementation. Also I set the default pagination value to 1 for easier functionality demonstration. 
 
 * **Design Note on Lists:**
     The lists were created using a **custom list component solution** instead of utilizing MUI's Data Grid component. This choice was made specifically to showcase my knowledge of structuring reusable, scalable, and complex components from scratch.

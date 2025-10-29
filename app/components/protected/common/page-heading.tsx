@@ -20,15 +20,15 @@ const PageHeading: React.FC<PageHeadingProps> = ({
 }) => {
   return (
     <Box
-      sx={(theme) => ({ // ⭐️ Koristite arrow funkciju za cijeli SX prop
+      sx={(theme) => ({
         display: 'flex',
         width: { xs: "100%", md: "auto" },
         flexDirection: { xs: "column", md: "row" },
         justifyContent: { xs: "flex-start", md: "space-between" },
         alignItems: 'center',
         p: 2,
+        mt: { xs: 2, md: 0 },
         background: theme.palette.background.paper,
-
         border: {
           xs: 'none',
           sm: 'none',
@@ -45,15 +45,12 @@ const PageHeading: React.FC<PageHeadingProps> = ({
         </Typography>
       </Box>
 
-      {/* Action Buttons Box */}
       <Box
         sx={{
           display: "flex",
           gap: 1,
-          // Crucial Change: This pushes the buttons to the right edge on xs/sm screens
           width: { xs: "100%", md: "auto" },
           justifyContent: { xs: "flex-end", md: "flex-start" },
-          // Add some margin on xs/sm to separate title and buttons visually
           mt: { xs: 1.5, md: 0 }
         }}
       >

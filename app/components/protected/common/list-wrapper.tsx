@@ -132,7 +132,7 @@ const ListWrapper = <TFilters,>({
         height: { xs: "100%", md: 'calc(100vh - 100px)' },
         display: 'flex',
         flexDirection: 'column',
-        border: { xs: `1px solid transparent`, md: `1px solid ${theme.palette.divider}` },
+        border: { xs: `2px solid ${theme.palette.divider}`, md: `1px solid ${theme.palette.divider}` },
         p: 4,
       }}
     >
@@ -174,6 +174,10 @@ const ListWrapper = <TFilters,>({
             {CountryFilter}
             {removeButton ? null : (
               <Box
+              sx={{
+                display: 'flex',
+                width: { xs: '100%', md: 'auto'}
+              }}
               >
                 <CustomButton
                   text={buttonText}
