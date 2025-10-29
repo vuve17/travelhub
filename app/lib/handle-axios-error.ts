@@ -1,4 +1,4 @@
-import { showSnackbar } from "@/app/store/notification.slice"; // Adjust path if needed
+import { showSnackbar } from "@/app/store/notification.slice";
 import { Dispatch } from "@reduxjs/toolkit";
 import { AxiosError } from "axios";
 
@@ -15,18 +15,15 @@ export const handleAxiosError = (
   dispatch: Dispatch,
   prefixMessage: string
 ) => {
-  console.log("Error caught by handler:", prefixMessage);
   const err = error as AxiosError;
   console.error(prefixMessage, err);
   const errorMessage =
     (err.response?.data as { message?: string })?.message || err.message || "";
 
-  // Construct the final snackbar message
   const snackbarMessage = `${prefixMessage}${
     errorMessage ? `: ${errorMessage}` : ""
   }`;
 
-  // Dispatch the action to show the snackbar
   dispatch(
     showSnackbar({
       message: snackbarMessage,

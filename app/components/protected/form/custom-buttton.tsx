@@ -31,7 +31,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
         textTransform: 'none',
         padding: '10px 20px',
         fontSize: '1rem',
-        maxWidth: 200,
+        width: 200,
         ...sx
       }}
     >

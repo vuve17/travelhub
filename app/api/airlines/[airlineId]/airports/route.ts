@@ -1,14 +1,13 @@
 "use server";
 
-import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ airlineId: string }> }
 ) {
   const { airlineId } = await params;
-  console.log("airlineId: ", airlineId)
   const id = parseInt(airlineId);
   if (isNaN(id)) {
     return NextResponse.json(
@@ -28,7 +27,12 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(airlineWithAirports?.servicedAirports.length ? [...airlineWithAirports.servicedAirports] : [], { status: 200 });
+    return NextResponse.json(
+      airlineWithAirports?.servicedAirports.length
+        ? [...airlineWithAirports.servicedAirports]
+        : [],
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error fetching serviced airports:", error);
     return NextResponse.json(

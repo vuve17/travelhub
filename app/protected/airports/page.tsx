@@ -85,7 +85,6 @@ const AirportListPage: React.FC = () => {
 
   const handleEditAirportSubmit = async (values: AirportWithCountry): Promise<Airport> => {
     try {
-      console.log('Submitting edited airport:', values as Airport);
       const { country, ...rest } = values;
       const response = await axios.put<Airport>(`/api/airports/${+values.id}`, rest);
       handleSuccess();
@@ -136,6 +135,8 @@ const AirportListPage: React.FC = () => {
               await handleDeleteAirport(selectedAirport.id);
             }}
             onCancel={handleModalClose}
+            question={`Are you sure you want to delete the ${selectedAirport.name}?`}
+            dialogText='Deleting this airport will automatically delete ALL routes currently linked to it. This action cannot be undone.'
           />
         )
       }

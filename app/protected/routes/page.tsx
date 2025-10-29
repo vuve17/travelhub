@@ -20,9 +20,7 @@ const RouteListPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  // ⭐️ AŽURIRANO: Tip je RouteWithRelations
   const [selectedRoute, setSelectedRoute] = useState<RouteWithRelations | null>(null);
-  // ⭐️ AŽURIRANO: Tip je niz RouteWithRelations
   const [routes, setRoutes] = useState<RouteWithRelations[]>([]);
   const [routesLoading, setRoutesLoading] = useState<boolean>(false);
 
@@ -45,7 +43,6 @@ const RouteListPage: React.FC = () => {
     fetchRouteData();
   }, []);
 
-  // 2. Modal Handlers
   const handleModalClose = () => {
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
@@ -136,8 +133,8 @@ const RouteListPage: React.FC = () => {
             await handleDelete(selectedRoute.id);
           }}
           onCancel={handleModalClose}
-          // ⭐️ AŽURIRANO: Tekst koristi podatke iz RouteWithRelations
-          dialogText={`Are you sure you want to delete route: ${selectedRoute.fromAirport.code} → ${selectedRoute.toAirport.code} by ${selectedRoute.operator.name}?`}
+          question={`Are you sure you want to delete route: ${selectedRoute.fromAirport.code} → ${selectedRoute.toAirport.code} by ${selectedRoute.operator.name}?`}
+          dialogText='Deleting this route cannot be undone.'
         />
       )}
 

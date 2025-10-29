@@ -11,7 +11,6 @@ import { handleAxiosError } from '@/app/lib/handle-axios-error';
 import { showSnackbar } from '@/app/store/notification.slice';
 import { AirlineWithRelations } from '@/app/types/airline-with-relations.type';
 import { AirportWithCountry } from '@/app/types/airport-with-country.type';
-import { MapLocation } from '@/app/types/map-location.type';
 import { RouteWithRelations } from '@/app/types/route-with-relations.type';
 import { Alert, Box, CircularProgress, Grid, Paper, Typography } from '@mui/material';
 import { Airport } from '@prisma/client';
@@ -37,10 +36,6 @@ const AirportDetailPage: React.FC = () => {
   const [routes, setRoutes] = useState<RouteWithRelations[]>([]);
   const [routesLoading, setRoutesLoading] = useState<boolean>(false);
 
-
-  const handleMapLocationSelect = (location: MapLocation | null) => {
-    console.log("Map location selected (read-only mode):", location);
-  };
 
   const fetchRoutes = async (id: number) => {
     try {
@@ -112,15 +107,15 @@ const AirportDetailPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (): Promise<Airport> => {
+  const handleDelete = async (): Promise<void> => {
     try {
       if (!airportId) {
         throw new Error("Invalid airport ID.");
       }
-      const response = await axios.delete<Airport>(`/api/airports/${airportId}`);
+      await axios.delete<Airport>(`/api/airports/${airportId}`);
       dispatch(showSnackbar({ message: `Airport successfuly deleted`, severity: "success" }))
       router.push('/protected/airports');
-      return response.data;
+      return
     } catch (error) {
       handleAxiosError(error, dispatch, "Error deleting airport")
       throw error;
@@ -140,7 +135,6 @@ const AirportDetailPage: React.FC = () => {
     return notFound();
   }
 
-  console.log("airlines: ", airlines)
   return (
     <>
       <ConfirmationModal
@@ -149,7 +143,8 @@ const AirportDetailPage: React.FC = () => {
         onCancel={() => setIsDeleteModalOpen(false)}
         yesText="Confirm Deletion"
         noText='Cancel'
-        dialogText={`Are you sure you want to delete airport: ${airport.name} (${airport.code})?`}
+        question={`Are you sure you want to delete the ${airport.name} (${airport.code})?`}
+        dialogText='Deleting this airport will automatically delete ALL routes currently linked to it. This action cannot be undone.'
       />
       {isEditModalOpen && airport && (
         <AirportModal
@@ -176,7 +171,7 @@ const AirportDetailPage: React.FC = () => {
               </Typography>
               <Map
                 readOnly={true}
-                onLocationSelect={handleMapLocationSelect}
+                onLocationSelect={() => { }}
                 initialLocation={{
                   lat: airport.latitude,
                   lng: airport.longitude

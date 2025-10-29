@@ -203,12 +203,11 @@ const COUNTRIES_TO_SEED = [
 async function main() {
   console.log('Start seeding the database...');
 
-  // --- 1. Seed Countries using createMany ---
   console.log(`Seeding ${COUNTRIES_TO_SEED.length} countries...`);
   
   const countryResult = await prisma.country.createMany({
     data: COUNTRIES_TO_SEED,
-    skipDuplicates: true, // Crucial for re-running the seed safely
+    skipDuplicates: true,
   });
   
   console.log(`Successfully seeded ${countryResult.count} new countries.`);

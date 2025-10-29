@@ -36,7 +36,6 @@ const Navbar: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // ⭐️ Get the current path
   const pathname = usePathname();
 
   const handleDrawerToggle = () => {
@@ -83,7 +82,6 @@ const Navbar: React.FC = () => {
 
       <List>
         {navItems.map((item) => {
-          // ⭐️ Determine if the item is active for mobile drawer
           const isActive = pathname.startsWith(item.path);
 
           return (
@@ -93,16 +91,16 @@ const Navbar: React.FC = () => {
                 href={item.path}
                 sx={{
                   textAlign: 'center',
-                  // ⭐️ Active style for mobile
                   bgcolor: isActive ? theme.palette.action.selected : 'transparent',
                 }}
               >
                 <ListItemText
                   primary={item.title}
-                  // ⭐️ Active text color for mobile
-                  primaryTypographyProps={{
-                    color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
-                    fontWeight: isActive ? 600 : 400,
+                  slotProps={{
+                    primary: {
+                      color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
+                      fontWeight: isActive ? 600 : 400,
+                    }
                   }}
                 />
               </ListItemButton>

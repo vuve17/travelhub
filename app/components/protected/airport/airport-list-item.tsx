@@ -1,9 +1,11 @@
-import React from 'react';
-import { Box, Card, Typography, Chip, IconButton, useTheme } from '@mui/material';
-import Link from 'next/link';
+'use client';
+
 import { AirportWithCountry } from '@/app/types/airport-with-country.type';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import { Box, Card, Chip, IconButton, Typography, useTheme } from '@mui/material';
+import Link from 'next/link';
+import React from 'react';
 
 interface AirportListItemProps {
   item: AirportWithCountry;
@@ -59,12 +61,12 @@ const AirportListItem: React.FC<AirportListItemProps> = ({ item, onEdit, onDelet
         >
           {item.name} ({item.code.trim()})
         </Typography>
-        
+
         <Typography variant="body1" fontWeight={400} color="text.secondary">
           {item.city}, {item.country.name}
         </Typography>
 
-        <Box display="flex" flexDirection={{xs:'column' , sm: 'column', md: 'row'}} alignItems={{sm: "left" , md: "center" }} gap={1} marginTop={2}>
+        <Box display="flex" flexDirection={{ xs: 'column', sm: 'column', md: 'row' }} alignItems={{ sm: "left", md: "center" }} gap={1} marginTop={2}>
           <Chip
             label={`IATA/ICAO: ${item.code}`}
             size="small"

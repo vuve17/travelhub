@@ -1,32 +1,129 @@
 'use client';
 
+import { RootState } from '@/app/store/store';
+import { ListPaginationConfig } from '@/app/types/list-pagination-config.type';
 import AddIcon from '@mui/icons-material/Add';
-import { Box, Paper, Stack, Typography, useTheme } from '@mui/material';
-import React, { ReactNode } from 'react';
+import { Box, Pagination, Paper, SelectChangeEvent, Stack, Typography, useTheme } from '@mui/material';
+import { Country } from '@prisma/client';
+import React, { ReactNode, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import CustomButton from '../form/custom-buttton';
+import CustomSelect from '../form/custom-select';
 
+const PER_PAGE_DEFAULT_OPTIONS = [
+  { label: '1 per page', value: 1 },
+  { label: '15 per page', value: 15 },
+  { label: '30 per page', value: 30 },
+  { label: '50 per page', value: 50 },
+];
 
-interface ListWrapperProps {
+interface ListWrapperProps<TFilters = unknown> {
   heading: string;
   removeButton?: boolean;
-  count?: number;
+  count: number;
   buttonText?: string;
   onButtonClick?: () => void;
   disabled?: boolean;
   children: ReactNode;
+  filterableByCountries?: boolean;
+  listConfig?: ListPaginationConfig<TFilters>;
+  perPageOptions?: { label: string, value: number }[]
+  onListConfigChange?: (newConfig: Partial<ListPaginationConfig<TFilters>>) => void;
 }
 
-const ListWrapper: React.FC<ListWrapperProps> = ({
+const ListWrapper = <TFilters,>({
   heading,
-  count = 0,
+  count,
   buttonText = '',
   onButtonClick = () => { },
   disabled = false,
   children,
-  removeButton = false
-}) => {
+  removeButton = false,
+  filterableByCountries = false,
+  listConfig = undefined,
+  perPageOptions = PER_PAGE_DEFAULT_OPTIONS,
+  onListConfigChange = () => { }
+}: ListWrapperProps<TFilters>) => {
   const theme = useTheme();
   const fullHeading = count !== undefined ? `${heading} (${count})` : heading;
+
+  const countries: Country[] = useSelector((state: RootState) => state.countriesReducer.list);
+  const itemsPerPage = listConfig?.perPage || 15;
+  const totalPages = itemsPerPage > 0
+    ? Math.ceil(count / itemsPerPage)
+    : 1;
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, newPage: number) => {
+    onListConfigChange({ page: newPage });
+  };
+
+  const handlePerPageChange = (event: SelectChangeEvent<string | number>) => {
+    const value = typeof event.target.value === 'string' ? parseInt(event.target.value) : event.target.value;
+
+    onListConfigChange({
+      perPage: value,
+      page: 1,
+    });
+  };
+
+  const handleCountryFilterChange = (event: SelectChangeEvent<string | number>) => {
+    const value = typeof event.target.value === 'string' ? parseInt(event.target.value) : event.target.value;
+
+    onListConfigChange({
+      page: 1,
+      filters: {
+        ...(listConfig?.filters as object),
+        countryId: value
+      } as unknown as TFilters
+    });
+  };
+
+  const selectedCountryId = (listConfig?.filters as unknown as { countryId: number })?.countryId || 0;
+
+  const countryOptions = useMemo(() => {
+    return [
+      { label: 'All Countries', value: 0 },
+      ...countries.map((country) => ({
+        label: country.name,
+        value: country.id,
+      })),
+    ];
+  }, [countries]);
+
+  const CountryFilter = useMemo(() => {
+    return filterableByCountries ? (
+      <Box sx={{ minWidth: 150, width: "100%" }}>
+        <CustomSelect
+          label="Filter by Country"
+          name="countryId"
+          value={selectedCountryId}
+          onChange={handleCountryFilterChange}
+          options={countryOptions}
+          size="small"
+        />
+      </Box>
+    ) : null;
+  }, [filterableByCountries, selectedCountryId, handleCountryFilterChange, countryOptions]);
+
+  const PerPageFilter = useMemo(() => {
+    if (!listConfig) return null;
+
+    return (
+      <Box sx={{ minWidth: 120, width: "100%" }}>
+        <CustomSelect
+          label="Per page"
+          name="perPage"
+          value={listConfig.perPage ?? PER_PAGE_DEFAULT_OPTIONS[0].value}
+          onChange={handlePerPageChange}
+          options={perPageOptions || PER_PAGE_DEFAULT_OPTIONS}
+          size="small"
+          fullWidth={false}
+          margin="normal"
+        />
+      </Box>
+    );
+  }, [listConfig?.perPage, handlePerPageChange, perPageOptions, listConfig]);
+
 
   return (
     <Paper
@@ -36,51 +133,104 @@ const ListWrapper: React.FC<ListWrapperProps> = ({
         display: 'flex',
         flexDirection: 'column',
         border: { xs: `1px solid transparent`, md: `1px solid ${theme.palette.divider}` },
-        // minWidth: {
-        //   sm: '100vw',
-        //   md: 'auto',
-        // },
-        p: 4
+        p: 4,
       }}
     >
+
       <Stack
-        direction={{ sm: "column", md: "row" }}
+        direction={{ xs: "column", md: "row" }} // Glavni Stack: Vertikalno na XS, Horizontalno na MD+
+        spacing={2}
         justifyContent="space-between"
-        gap={{ xs: 2, sm: 2, md: 0 }}
-        // alignItems="center"
+        alignItems="center"
         sx={{
           p: 2,
-          borderBottom: `3px solid ${theme.palette.divider}`,
+          borderBottom: `1px solid ${theme.palette.divider}`,
           bgcolor: theme.palette.background.paper,
           flexShrink: 0,
         }}
       >
-        <Typography variant="h4" fontWeight={600}>
-          {fullHeading}
-        </Typography>
+        <Box
+          sx={{
+            flexGrow: 1,
+            width: { xs: '100%', md: 'auto' },
+            mr: { xs: 0, md: 2 }
+          }}
+        >
+          <Typography variant="h4" fontWeight={600}>
+            {fullHeading}
+          </Typography>
+        </Box>
+        {(CountryFilter || !removeButton) && (
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems="center"
+            justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
+            sx={{
+              flexShrink: 0,
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
+            {CountryFilter}
+            {removeButton ? null : (
+              <Box
+              >
+                <CustomButton
+                  text={buttonText}
+                  onClick={onButtonClick}
+                  startIcon={<AddIcon />}
+                  disabled={disabled}
+                  sx={{
+                    maxHeight: 40,
+                  }}
+                />
+              </Box>
+            )}
 
-        {
-          removeButton ? null : <CustomButton
-            text={buttonText}
-            onClick={onButtonClick}
-            startIcon={<AddIcon />}
-            disabled={disabled}
-          />
-        }
-
+          </Stack>
+        )}
       </Stack>
-
       <Box
         sx={{
           flexGrow: 1,
           overflowY: 'auto',
-          pt: 2
+          pt: 2,
         }}
       >
         {children}
       </Box>
-    </Paper>
-  );
+      {
+        listConfig && (
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent={{ xs: "center", sm: "space-between" }}
+            alignItems="center"
+            spacing={{ xs: 2, md: 0 }}
+            sx={{
+              flexShrink: 0,
+              py: 1,
+              px: 2,
+              borderTop: `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            <Box
+            >
+              {PerPageFilter}
+            </Box>
+
+            <Box>
+              <Pagination
+                count={totalPages}
+                page={listConfig.page}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </Box>
+          </Stack>
+        )
+      }
+    </Paper >
+  )
 };
 
 export default ListWrapper;

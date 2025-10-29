@@ -1,8 +1,7 @@
 "use server";
 
-import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import { AirlineWithCountry } from "@/app/types/airline-with-country.type";
+import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
@@ -32,7 +31,9 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(airportWithAirlines ? [...airportWithAirlines?.servicingAirlines] : []);
+    return NextResponse.json(
+      airportWithAirlines ? [...airportWithAirlines?.servicingAirlines] : []
+    );
   } catch (error) {
     console.error(`Error fetching airlines for airport ${airportId}:`, error);
     return NextResponse.json(

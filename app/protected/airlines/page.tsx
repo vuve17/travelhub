@@ -4,46 +4,116 @@ import AirlineListItem from '@/app/components/protected/airline/airline-list-ite
 import AirlineModal from '@/app/components/protected/airline/airline-modal';
 import ConfirmationModal from '@/app/components/protected/common/confirmation-modal';
 import ListWrapper from '@/app/components/protected/common/list-wrapper';
-import CustomButton from '@/app/components/protected/form/custom-buttton';
+import { ListPaginationConfig } from '@/app/types/list-pagination-config.type';
 import { handleAxiosError } from '@/app/lib/handle-axios-error';
 import { showSnackbar } from '@/app/store/notification.slice';
 import { AirlineSubmissionType } from '@/app/types/airline-submission.type';
 import { AirlineWithCountry } from '@/app/types/airline-with-country.type';
 import { AirportWithCountry } from '@/app/types/airport-with-country.type';
 import AddIcon from '@mui/icons-material/Add';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography, Alert } from '@mui/material';
 import { Airline, Airport } from '@prisma/client';
 import axios, { AxiosResponse } from 'axios';
-import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useEffect, useState, useCallback } from 'react'; // Uklonio useMemo
+import { useDispatch, useSelector } from 'react-redux';
+import { useRouter, useSearchParams } from 'next/navigation';
+import CustomButton from '@/app/components/protected/form/custom-buttton';
+import { fetchCountries } from '@/app/store/countires.slice';
+import { RootState, AppDispatch } from '@/app/store/store';
+
+
+// ⭐️ 1. Definiranje interfejsa filtera
+interface AirlineFilters {
+  countryId: number;
+}
+
+// ⭐️ 2. Definiranje početnog (default) stanja liste
+const initialListConfig: ListPaginationConfig<AirlineFilters> = {
+  page: 1,
+  perPage: 1, // Fiksna vrijednost
+  filters: { countryId: 0 },
+};
+
+// ⭐️ Funkcija za inicijalizaciju iz URL-a (pokreće se samo jednom)
+const initializeListConfig = (searchParams: URLSearchParams): ListPaginationConfig<AirlineFilters> => {
+  const page = parseInt(searchParams.get('page') || '1');
+  const countryId = parseInt(searchParams.get('countryId') || '0');
+
+  return {
+    page: page,
+    perPage: initialListConfig.perPage,
+    filters: { countryId: countryId },
+  };
+};
 
 
 const AirlineListPage: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const countries = useSelector((state: RootState) => state.countriesReducer.list);
+
+  // ⭐️ Inicijalizacija listConfig-a samo jednom (lazy initialization)
+  const [listConfig, setListConfig] = useState(() => initializeListConfig(searchParams));
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [selectedAirline, setSelectedAirline] = useState<Airline | null>(null);
   const [selectedAirlinesServicedAirports, setSelectedAirlinesServicedAirports] = useState<Airport[] | []>([]);
+
   const [airlines, setAirlines] = useState<AirlineWithCountry[]>([]);
+  const [totalAirlinesCount, setTotalAirlinesCount] = useState<number>(0);
+
   const [airlinesLoading, setAirlinesLoading] = useState<boolean>(true);
   const [allAirports, setAllAirports] = useState<AirportWithCountry[]>([]);
   const [airportsLoading, setAirportsLoading] = useState<boolean>(true);
   const [servicedAirportsLoading, setServicedAirportsLoading] = useState<boolean>(false);
 
-  const fetchAirlines = async () => {
+
+  const fetchAirlines = useCallback(async () => {
     setAirlinesLoading(true);
+
+    const params = {
+      page: listConfig.page,
+      perPage: listConfig.perPage,
+      countryId: listConfig.filters.countryId,
+    };
+
+    const cleanedParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== 0 && v !== null && v !== undefined)
+    );
+
     try {
-      const response = await axios.get<AirlineWithCountry[]>('/api/airlines');
+      const response = await axios.get<AirlineWithCountry[]>('/api/airlines', {
+        params: cleanedParams,
+      });
+
+      const totalCountHeader = response.headers['x-total-count'];
+
       setAirlines(response.data);
+      setTotalAirlinesCount(totalCountHeader ? parseInt(totalCountHeader, 10) : response.data.length);
+
+      const current = new URLSearchParams();
+      if (listConfig.page > 1) {
+        current.set('page', listConfig.page.toString());
+      }
+      if (listConfig.filters.countryId > 0) {
+        current.set('countryId', listConfig.filters.countryId.toString());
+      }
+
     } catch (error) {
-      handleAxiosError(error, dispatch, "Error fetching airlines")
+      handleAxiosError(error, dispatch, "Error fetching airlines");
+      setAirlines([]);
+      setTotalAirlinesCount(0);
     } finally {
       setAirlinesLoading(false);
     }
-  };
+  }, [listConfig, dispatch, router]); // Ovisnost je listConfig (STATE!)
+
 
   const fetchAllAirports = async () => {
+    // ... (ostaje isto)
     setAirportsLoading(true);
     try {
       const response = await axios.get<AirportWithCountry[]>('/api/airports');
@@ -69,12 +139,42 @@ const AirlineListPage: React.FC = () => {
     }
   };
 
+
+  // ⭐️ Pokretanje fetchAirlines na promjenu listConfig-a
   useEffect(() => {
     fetchAirlines();
+  }, [fetchAirlines]);
+
+  // Pokretanje fetchAllAirports samo jednom
+  useEffect(() => {
+    if (countries.length === 0) {
+      dispatch(fetchCountries());
+    }
     fetchAllAirports();
   }, []);
 
 
+  // ⭐️ 5. Handler za promjenu konfiguracije liste (AŽURIRA LOKALNO STANJE)
+  const handleListConfigChange = (newConfig: Partial<ListPaginationConfig<AirlineFilters>>) => {
+    setListConfig(prev => {
+      let newFilters = prev.filters;
+      let newPage = newConfig.page !== undefined ? newConfig.page : prev.page;
+
+      if (newConfig.filters && newConfig.filters.countryId !== undefined) {
+        newFilters = { ...prev.filters, ...newConfig.filters };
+        newPage = 1; // Resetuj stranicu na 1 pri promjeni filtera
+      }
+
+      return {
+        ...prev,
+        ...newConfig,
+        page: newPage,
+        filters: newFilters,
+      };
+    });
+  };
+
+  // ... (Modal handlers i Submit logiku ostaju isti) ...
   const handleModalClose = () => {
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
@@ -102,6 +202,7 @@ const AirlineListPage: React.FC = () => {
   }
 
   const handleSuccess = async () => {
+    // Pokreni fetch sa trenutnim listConfig-om
     await fetchAirlines()
     handleModalClose();
   }
@@ -199,26 +300,32 @@ const AirlineListPage: React.FC = () => {
           onConfirm={async () => {
             await handleDelete(selectedAirline.id);
           }}
+          question={`Are you sure you want to delete the airline "${selectedAirline.name}"?`}
+          dialogText='Deleting this airline will automatically delete ALL routes currently linked to it. This action cannot be undone.'
           onCancel={handleModalClose}
         />
       )}
-
       <ListWrapper
         heading="Global Airline Directory"
-        count={airlines.length}
+        count={totalAirlinesCount}
         buttonText="Add New Airline"
         onButtonClick={handleCreateModalOpen}
-        disabled={airlinesLoading && airlines.length === 0}
-        removeButton={airlines.length === 0}
+        disabled={airlinesLoading && totalAirlinesCount === 0}
+        removeButton={totalAirlinesCount === 0}
+
+        filterableByCountries={true}
+        listConfig={listConfig} // ⭐️ Korištenje stanja
+        onListConfigChange={handleListConfigChange} // ⭐️ Handler za promjenu stanja
       >
-        {airlinesLoading && airlines.length === 0 ? (
+        {/* ... (Render logiku ostaje ista) ... */}
+        {airlinesLoading && totalAirlinesCount === 0 ? (
           <Box display="flex" justifyContent="center" alignItems="center" height="100%">
             <CircularProgress />
             <Typography sx={{ ml: 2 }}>Loading airlines...</Typography>
           </Box>
         ) :
 
-          !airlinesLoading && airlines.length === 0 ? (
+          !airlinesLoading && totalAirlinesCount === 0 ? (
             <Box
               sx={{
                 p: 4,
@@ -273,12 +380,6 @@ const AirlineListPage: React.FC = () => {
                   />
                 ))}
               </Box>
-
-              {airlinesLoading && airlines.length > 0 && (
-                <Box display="flex" justifyContent="center" mt={2}>
-                  <CircularProgress size={20} />
-                </Box>
-              )}
             </>
           )}
       </ListWrapper>

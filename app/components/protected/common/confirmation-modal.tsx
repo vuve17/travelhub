@@ -24,7 +24,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProperties> = ({
   openModal,
   onCancel,
   onConfirm,
-  dialogText = 'Let Google help apps determine location. This means sending anonymous location data to Google, even when no apps are running.',
+  dialogText = '',
   question = 'Are you sure you want to execute this action?',
   yesText = "Yes, I'm sure",
   noText = 'No, cancel',

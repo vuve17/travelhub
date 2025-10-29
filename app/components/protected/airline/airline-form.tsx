@@ -64,7 +64,6 @@ const AirlineForm: React.FC<AirlineFormProps> = ({ initialValues, onSubmit, mode
   const title = mode === 'create' ? 'Create New Airline' : 'Edit Airline';
   const submitText = mode === 'create' ? 'Create Airline' : 'Save Changes';
   const servicedAirportIds = selectedAirlinesServicedAirports.length ? selectedAirlinesServicedAirports.map((a) => a.id) : []
-  console.log("servicedAirportIds: ", servicedAirportIds)
   const initialFormValues = initialValues
     ? {
       ...initialValues,
@@ -89,50 +88,50 @@ const AirlineForm: React.FC<AirlineFormProps> = ({ initialValues, onSubmit, mode
           const servicedAirportProps = getFieldProps('servicedAirportIds');
 
           return (
-          <Form>
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CustomTextInput
-                  {...getFieldProps('name')}
-                  label="Airline Name"
-                  required={true}
-                  error={touched.name && errors.name}
-                  size="small"
-                />
+            <Form>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <CustomTextInput
+                    {...getFieldProps('name')}
+                    label="Airline Name"
+                    required={true}
+                    error={touched.name && errors.name}
+                    size="small"
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <CountrySelect
+                    {...getFieldProps('baseCountryId')}
+                    error={touched.baseCountryId && errors.baseCountryId}
+                    size="small"
+                  />
+                </Grid>
+
+                <Grid size={12}>
+                  <AirportMutiselectDropdownInput
+                    {...servicedAirportProps}
+                    size="small"
+                    airports={airports}
+                    airportsLoading={airportsLoading}
+                  />
+                </Grid>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CountrySelect
-                  {...getFieldProps('baseCountryId')}
-                  error={touched.baseCountryId && errors.baseCountryId}
-                  size="small"
-                />
-              </Grid>
-
-              <Grid size={12}>
-                <AirportMutiselectDropdownInput
-                  {...servicedAirportProps}
-                  size="small"
-                  airports={airports}
-                  airportsLoading={airportsLoading}
-                />
-              </Grid>
-            </Grid>
-
-            <Box sx={{ mt: 3 }}>
-              <Button
-                type="submit"
-                color="primary"
-                variant="contained"
-                disabled={saving || airportsLoading}
-                fullWidth
-              >
-                {saving ? <CircularProgress size={24} color="inherit" /> : submitText}
-              </Button>
-            </Box>
-          </Form>
-        );
-      }}
+              <Box sx={{ mt: 3 }}>
+                <Button
+                  type="submit"
+                  color="primary"
+                  variant="contained"
+                  disabled={saving || airportsLoading}
+                  fullWidth
+                >
+                  {saving ? <CircularProgress size={24} color="inherit" /> : submitText}
+                </Button>
+              </Box>
+            </Form>
+          );
+        }}
       </Formik>
     </Paper>
   );

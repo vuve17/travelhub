@@ -154,7 +154,6 @@ const RouteModal: React.FC<RouteModalProps> = ({ onClose, onSubmit, mode, initia
                   servicedAirports={servicedAirports}
                   servicedAirportsLoading={servicedAirportsLoading}
                   fetchServicedAirports={(id) => {
-                    console.log("trigger")
                     setFieldValue('fromAirportId', 0, false);
                     setFieldValue('toAirportId', 0, false);
                     fetchServicedAirports(id);

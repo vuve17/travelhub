@@ -1,9 +1,9 @@
 'use server';
 
-import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import { AirlineWithCountry } from "@/app/types/airline-with-country.type";
 import { AirlineSubmissionType } from "@/app/types/airline-submission.type";
+import { AirlineWithCountry } from "@/app/types/airline-with-country.type";
+import { NextRequest, NextResponse } from "next/server";
 
 
 export async function GET(
@@ -71,48 +71,48 @@ export async function PUT(
     }
 
     const currentAirline = await prisma.airline.findUnique({
-        where: { id },
-        select: { servicedAirports: { select: { id: true } } }
+      where: { id },
+      select: { servicedAirports: { select: { id: true } } }
     });
 
     if (!currentAirline) {
-        return NextResponse.json({ message: `Airline with ID ${id} not found.` }, { status: 404 });
+      return NextResponse.json({ message: `Airline with ID ${id} not found.` }, { status: 404 });
     }
 
     const currentServicedIds = currentAirline.servicedAirports.map(a => a.id);
 
     const servicedAirportIdNums = servicedAirportIds ? servicedAirportIds.map(Number) : [];
-    
+
     const removedAirportIds = currentServicedIds.filter(
-        currentId => !servicedAirportIdNums.includes(currentId)
+      currentId => !servicedAirportIdNums.includes(currentId)
     );
 
     if (removedAirportIds.length > 0) {
-        const conflictingRoutes = await prisma.route.findMany({
-            where: {
-                airlineId: id,
-                OR: [
-                    { fromAirportId: { in: removedAirportIds } },
-                    { toAirportId: { in: removedAirportIds } },
-                ],
-            },
-            select: { 
-                id: true, 
-                fromAirport: { select: { name: true, code: true} },
-                toAirport: { select: { name: true, code: true } }
-            },
-            take: 1,
-        });
+      const conflictingRoutes = await prisma.route.findMany({
+        where: {
+          airlineId: id,
+          OR: [
+            { fromAirportId: { in: removedAirportIds } },
+            { toAirportId: { in: removedAirportIds } },
+          ],
+        },
+        select: {
+          id: true,
+          fromAirport: { select: { name: true, code: true } },
+          toAirport: { select: { name: true, code: true } }
+        },
+        take: 1,
+      });
 
-        if (conflictingRoutes.length > 0) {
-            const route = conflictingRoutes[0];
-            return NextResponse.json(
-                { 
-                    message: `Cannot remove an airport that is part of an active route operated by this airline. Route ${route.fromAirport.name} (${route.fromAirport.code}) -> ${route.toAirport.name} (${route.toAirport.code}) prevents deletion.` 
-                },
-                { status: 409 }
-            );
-        }
+      if (conflictingRoutes.length > 0) {
+        const route = conflictingRoutes[0];
+        return NextResponse.json(
+          {
+            message: `Cannot remove an airport that is part of an active route operated by this airline. Route ${route.fromAirport.name} (${route.fromAirport.code}) -> ${route.toAirport.name} (${route.toAirport.code}) prevents deletion.`
+          },
+          { status: 409 }
+        );
+      }
     }
 
     const airportUpdate = {
@@ -123,7 +123,6 @@ export async function PUT(
       },
     };
 
-    // 2. Perform the update
     const updatedAirline = await prisma.airline.update({
       where: { id: id },
       data: {
@@ -133,7 +132,7 @@ export async function PUT(
       },
       include: {
         baseCountry: true,
-        servicedAirports: true, // Include the updated list of airports in the response
+        servicedAirports: true,
       },
     });
 
@@ -142,24 +141,23 @@ export async function PUT(
   } catch (error) {
     const errAny: any = error;
 
-    if (errAny?.code === "P2025") { // Record to update not found
+    if (errAny?.code === "P2025") {
       return NextResponse.json(
         { message: `Airline with ID ${id} not found.` },
         { status: 404 }
       );
     }
 
-    if (errAny?.code === "P2002") { // Unique constraint violation (e.g., name)
+    if (errAny?.code === "P2002") {
       return NextResponse.json(
         { message: "Airline name is already in use by another airline." },
         { status: 409 }
       );
     }
-    
-    // P2003 now covers invalid Country ID or invalid Airport ID
-    if (errAny?.code === 'P2003') { 
+
+    if (errAny?.code === 'P2003') {
       return NextResponse.json(
-        { message: "Invalid ID provided for Base Country or Serviced Airport." }, 
+        { message: "Invalid ID provided for Base Country or Serviced Airport." },
         { status: 400 }
       );
     }
@@ -193,8 +191,8 @@ export async function DELETE(
 
   } catch (error) {
     const errAny: any = error;
-    
-    if (errAny?.code === 'P2025') { 
+
+    if (errAny?.code === 'P2025') {
       return NextResponse.json(
         { message: `Airline with ID ${id} not found.` },
         { status: 404 }
@@ -202,10 +200,10 @@ export async function DELETE(
     }
 
     if (errAny?.code === 'P2003') {
-        return NextResponse.json(
-            { message: "Cannot delete airline as it is currently operating routes." },
-            { status: 409 }
-        );
+      return NextResponse.json(
+        { message: "Cannot delete airline as it is currently operating routes." },
+        { status: 409 }
+      );
     }
 
     console.error(`Error deleting airline ID ${id}:`, error);

@@ -1,16 +1,16 @@
 services:
-  # Servis za PostgreSQL bazu podataka
+
   db:
     image: postgres:16-alpine 
     restart: always
     environment:
-      POSTGRES_USER: devuser      # Korisničko ime
-      POSTGRES_PASSWORD: devpassword  # Lozinka
-      POSTGRES_DB: travelhub_db    # Ime baze
+      POSTGRES_USER: devuser      
+      POSTGRES_PASSWORD: devpassword 
+      POSTGRES_DB: travelhub_db    
     ports:
-      - '5432:5432'               # Lokalni port: Port u kontejneru
+      - '5433:5432'               
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Perzistentna pohrana podataka
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
   postgres_data:

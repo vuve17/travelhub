@@ -2,6 +2,7 @@
 
 import { fetchCountries } from '@/app/store/countires.slice';
 import { AppDispatch, RootState } from '@/app/store/store';
+import { AirportWithCountry } from '@/app/types/airport-with-country.type';
 import { MapLocation } from '@/app/types/map-location.type';
 import { Box, Button, CircularProgress, Grid, Paper, Typography, useTheme } from '@mui/material';
 import { Airport, Country } from '@prisma/client';
@@ -12,7 +13,6 @@ import * as Yup from 'yup';
 import CountrySelect from '../form/country-select';
 import CustomTextInput from '../form/custom-text-input';
 import Map from '../map/map';
-import { AirportWithCountry } from '@/app/types/airport-with-country.type';
 
 
 const AirportValidationSchema = Yup.object().shape({
@@ -46,8 +46,8 @@ interface MapUpdaterProps {
 
 const MapUpdater: React.FC<MapUpdaterProps> = ({ setMapLocation, initialLat, initialLng, countries }) => {
   // Use Airport type from schema, now includes 'city'
-  const { setFieldValue, setFieldTouched } = useFormikContext<Airport & {city: string}>(); 
-  
+  const { setFieldValue, setFieldTouched } = useFormikContext<Airport & { city: string }>();
+
   const handleLocationSelect = (location: MapLocation | null) => {
     setMapLocation(location);
 
@@ -60,10 +60,10 @@ const MapUpdater: React.FC<MapUpdaterProps> = ({ setMapLocation, initialLat, ini
 
       // 2. ⭐️ NEW: Set City
       if (location.city) {
-          setFieldValue('city', location.city);
-          setFieldTouched('city', true, false);
+        setFieldValue('city', location.city);
+        setFieldTouched('city', true, false);
       }
-      
+
       // 3. ⭐️ Pre-select Country based on geocoded name
       if (location.country) {
         const country = countries.find(c => c.name === location.country);
@@ -79,7 +79,7 @@ const MapUpdater: React.FC<MapUpdaterProps> = ({ setMapLocation, initialLat, ini
       setFieldTouched('latitude', true, false);
       setFieldTouched('longitude', true, false);
       // Also clear city on location clear
-      setFieldValue('city', ''); 
+      setFieldValue('city', '');
       setFieldTouched('city', true, false);
     }
   };
@@ -109,7 +109,7 @@ const AirportForm: React.FC<AirportFormProps> = ({ initialValues, onSubmit, mode
   const [mapLocation, setMapLocation] = useState<MapLocation | null>(null);
   const [saving, setSaving] = useState(false);
   const theme = useTheme();
-  
+
   useEffect(() => {
     if (countries.length === 0) {
       dispatch(fetchCountries());
@@ -119,8 +119,7 @@ const AirportForm: React.FC<AirportFormProps> = ({ initialValues, onSubmit, mode
       setMapLocation({
         lat: initialValues.latitude,
         lng: initialValues.longitude,
-        // The initialValues for MapLocation need to be updated with the city property
-        city: (initialValues as Airport & {city: string}).city || null,
+        city: (initialValues as Airport & { city: string }).city || null,
         country: countries.length ? countries.find((c) => c.id === initialValues.countryId)?.name || null : null,
       });
     }
@@ -128,7 +127,6 @@ const AirportForm: React.FC<AirportFormProps> = ({ initialValues, onSubmit, mode
 
 
   const handleSubmit = async (values: Airport) => {
-    // Basic validation check is redundant because Yup handles most, but ensures map interaction
     if (!values.latitude || !values.longitude) {
       return;
     }
@@ -210,11 +208,11 @@ const AirportForm: React.FC<AirportFormProps> = ({ initialValues, onSubmit, mode
                 GPS Location (Click on Map)
               </Typography>
 
-              <MapUpdater 
-                setMapLocation={setMapLocation} 
-                initialLat={initialValues.latitude || undefined} 
-                initialLng={initialValues.longitude || undefined} 
-                countries={countries} 
+              <MapUpdater
+                setMapLocation={setMapLocation}
+                initialLat={initialValues.latitude || undefined}
+                initialLng={initialValues.longitude || undefined}
+                countries={countries}
               />
 
               <Box sx={{ mt: 1, p: 1, bgcolor: theme.palette.background.paper, borderRadius: 1 }}>
@@ -230,7 +228,6 @@ const AirportForm: React.FC<AirportFormProps> = ({ initialValues, onSubmit, mode
                 )}
               </Box>
 
-              {/* Check validation errors for location fields */}
               {((touched as any).latitude && (errors as any).latitude) || ((touched as any).longitude && (errors as any).longitude) ? (
                 <Typography color="error" variant="caption" sx={{ mt: 1 }}>
                   {(errors as any).latitude || (errors as any).longitude}

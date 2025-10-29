@@ -1,11 +1,10 @@
 'use client'
 
-import Link from "next/link";
-import { Container, Box, Typography, Button } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import LoginIcon from '@mui/icons-material/Login';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
+import { Box, Button, Container, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import Link from "next/link";
 
 export default function Home() {
     const theme = useTheme();
@@ -17,13 +16,35 @@ export default function Home() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                // ⭐️ 1. Postavite kontejner na 'relative' za apsolutno pozicioniranje pozadine
+                position: 'relative',
                 bgcolor: theme.palette.background.default,
                 p: theme.spacing(4),
+                // Uklonjena svojstva backgroundImage i filter s glavnog Containera
             }}
         >
+            {/* ⭐️ 2. NOVI BOX ZA POZADINU (BLUR) */}
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 0, // Mora biti ispod glavnog sadržaja (Box)
+                    backgroundImage: 'url(/world-with-locations-bg-img.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundAttachment: 'fixed',
+                    // ⭐️ Ovdje primijenite blur filter i eventualno brightness
+                    filter: 'blur(3px) brightness(0.8)',
+                }}
+            />
+            {/* Korištenje zIndex: 1 za glavni sadržaj osigurava da je iznad blur sloja */}
             <Box
                 component="main"
                 sx={{
+                    zIndex: 1,
                     width: '100%',
                     maxWidth: 800,
                     display: 'flex',
@@ -76,42 +97,21 @@ export default function Home() {
                         justifyContent: 'center'
                     }}
                 >
-
                     <Button
                         component={Link}
-                        href="/login"
+                        href="/protected/airports"
                         variant="contained"
                         size="large"
                         startIcon={<LoginIcon />}
                         sx={{
-                            width: { xs: '100%', sm: 180 },
+                            width: { xs: '100%', sm: 250 },
                             py: theme.spacing(1.5),
                         }}
                     >
-                        Login
+                        Let&apos;s Get Started
                     </Button>
-
-                    <Button
-                        component={Link}
-                        href="/register"
-                        variant="outlined"
-                        size="large"
-                        startIcon={<PersonAddIcon />}
-                        color="inherit"
-                        sx={{
-                            width: { xs: '100%', sm: 180 },
-                            py: theme.spacing(1.5),
-                        }}
-                    >
-                        Register
-                    </Button>
-
                 </Box>
-
             </Box>
         </Container>
     );
 }
-
-
-// 

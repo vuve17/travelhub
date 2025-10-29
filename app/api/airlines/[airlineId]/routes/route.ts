@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 import prisma from "@/app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,49 +18,50 @@ export async function GET(
   }
 
   try {
-    const airportExists = await prisma.airline.findUnique({
+    const airlineExists = await prisma.airline.findUnique({
       where: { id },
+      select: { id: true },
     });
 
-    if (!airportExists) {
+    if (!airlineExists) {
       return NextResponse.json(
-        { message: `Airport with ID ${id} not found.` },
+        { message: `Airline with ID ${id} not found.` },
         { status: 404 }
       );
     }
-    
+
     const routes = await prisma.route.findMany({
       where: {
-        fromAirportId: id,
+        operator:{
+          id
+        }
       },
       include: {
         operator: true,
-        fromAirport: { 
-            include: { 
-                country: true 
-            } 
+        fromAirport: {
+          include: {
+            country: true,
+          },
         },
-        toAirport: { 
-            include: { 
-                country: true 
-            } 
+        toAirport: {
+          include: {
+            country: true,
+          },
         },
       },
       orderBy: {
         toAirport: {
-            code: 'asc'
-        }
-      }
+          code: "asc",
+        },
+      },
     });
 
     return NextResponse.json(routes);
-
   } catch (error) {
-    console.error(`Error fetching routes for airport ${id}:`, error);
+    console.error(`Error fetching routes for airline ${id}:`, error);
     return NextResponse.json(
-      { message: "Failed to fetch route data for the airport." },
+      { message: "Failed to fetch route data for the airline." },
       { status: 500 }
     );
   }
 }
-

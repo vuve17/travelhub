@@ -70,7 +70,6 @@ const AirlineDetailPage: React.FC = () => {
       const routesRes = await axios.get<RouteWithRelations[]>(`/api/airlines/${id}/routes`);
       setRoutes(routesRes.data)
     } catch (error) {
-      console.log("error")
       const err = error as AxiosError;
       console.error("Failed to fetch airline data:", err);
       const errorMessage =
@@ -153,15 +152,15 @@ const AirlineDetailPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (): Promise<Airline> => {
+  const handleDelete = async (): Promise<void> => {
     try {
       if (!airlineId) {
         throw new Error("Invalid airline ID.");
       }
-      const response = await axios.delete<Airline>(`/api/airlines/${airlineId}`);
+      await axios.delete<Airline>(`/api/airlines/${airlineId}`);
       dispatch(showSnackbar({ message: "Airline successfuly deleted", severity: "success" }))
       router.push('/protected/airlines');
-      return response.data;
+      return
     } catch (error) {
       handleAxiosError(error, dispatch, "Error deleting airline")
       throw error
@@ -188,8 +187,6 @@ const AirlineDetailPage: React.FC = () => {
     return notFound();
   }
 
-  console.log("servicedAirportLocations: ", servicedAirportLocations)
-
   return (
     <>
       <ConfirmationModal
@@ -198,7 +195,8 @@ const AirlineDetailPage: React.FC = () => {
         onCancel={() => setIsDeleteModalOpen(false)}
         yesText="Confirm Deletion"
         noText='Cancel'
-        dialogText={`Are you sure you want to delete airline: ${airline.name}?`}
+        question={`Are you sure you want to delete the airline "${airline.name}"?`}
+        dialogText='Deleting this airline will automatically delete ALL routes currently linked to it. This action cannot be undone.'
       />
 
       {isEditModalOpen && airline && (

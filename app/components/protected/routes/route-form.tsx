@@ -31,7 +31,6 @@ const RouteFormFields: React.FC<RouteFormFieldsProps> = ({
     useFormikContext<CreateRouteType>();
 
   const prevAirlineIdRef = useRef(values.airlineId);
-  console.log("values: ", values)
   useEffect(() => {
     if (values.airlineId !== prevAirlineIdRef.current) {
       if (values.airlineId > 0) {
@@ -61,7 +60,6 @@ const RouteFormFields: React.FC<RouteFormFieldsProps> = ({
 
   const selectedFrom = servicedAirports.find(a => a.id === values.fromAirportId);
   const selectedTo = servicedAirports.find(a => a.id === values.toAirportId);
-  console.log("selectedFrom :selectedTo  ", selectedFrom, selectedTo)
 
   const routesToDraw: CoordinateType[] = [];
   if (selectedFrom && selectedTo) {
@@ -75,7 +73,6 @@ const RouteFormFields: React.FC<RouteFormFieldsProps> = ({
   const getError = (name: keyof CreateRouteType) => (touched[name] && errors[name] ? errors[name] : undefined);
 
   const MapMemo = useMemo(() => {
-    console.log(routesToDraw, servicedAirportLocations)
     return (
       <Map
         onLocationSelect={() => { }}

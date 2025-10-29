@@ -1,11 +1,12 @@
+'use server';
+
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { CreateRouteType } from "@/app/types/create-route.type";
-import { RouteWithRelations } from "@/app/types/route-with-relations.type"; // Pretpostavljamo da je ovaj tip prilagođen novoj shemi
+import { RouteWithRelations } from "@/app/types/route-with-relations.type";
 import { estimateFlightTime } from "@/app/lib/haversine-formula";
 
-// 1. GET /api/routes
-// Dohvaća sve rute s uključenim relacijama (Operator, Polazni/Dolazni aerodrom i njihove države).
+
 export async function GET() {
   try {
     const routes: RouteWithRelations[] = await prisma.route.findMany({
@@ -76,7 +77,6 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
-    console.log(1);
 
     const fromAirport = await prisma.airport.findUnique({
       where: { id: fromAirportId },
@@ -94,7 +94,6 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
-    console.log(2);
 
     const flightTime = estimateFlightTime(
       { lat: fromAirport.latitude, lng: fromAirport.longitude },
@@ -102,7 +101,6 @@ export async function POST(request: Request) {
     );
     const totalDurationMin = flightTime.totalMinutes;
 
-    console.log(3, "time m: ", flightTime);
     const newRoute = await prisma.route.create({
       data: {
         fromAirportId,
@@ -117,7 +115,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Vrati kreiranu Rutu
     return NextResponse.json(newRoute, { status: 201 });
   } catch (error) {
     console.error("Error creating route:", error);

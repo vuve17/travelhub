@@ -1,21 +1,21 @@
 'use client';
 
-import React from 'react';
-import { Modal, Box, IconButton } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import { Airline, Airport } from '@prisma/client';
-import AirlineForm from './airline-form';
+import { closeButtonStyle } from '@/app/lib/close-icon-style';
+import { AirlineSubmissionType } from '@/app/types/airline-submission.type';
 import { AirlineWithCountry } from '@/app/types/airline-with-country.type';
 import { AirportWithCountry } from '@/app/types/airport-with-country.type';
-import { AirlineSubmissionType } from '@/app/types/airline-submission.type';
-import { closeButtonStyle } from '@/app/lib/close-icon-style';
+import CloseIcon from '@mui/icons-material/Close';
+import { Box, IconButton, Modal } from '@mui/material';
+import { Airline, Airport } from '@prisma/client';
+import React from 'react';
+import AirlineForm from './airline-form';
 
 interface AirlineModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (values: AirlineSubmissionType) => Promise<Airline>;
   mode: 'create' | 'edit';
-  initialValues?: AirlineWithCountry | undefined;
+  initialValues?: AirlineWithCountry | Airline | undefined;
   airportsLoading: boolean;
   airports: AirportWithCountry[];
   selectedAirlinesServicedAirports: Airport[];

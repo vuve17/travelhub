@@ -1,13 +1,12 @@
-// components/forms/CountrySelect.tsx
+'use client';
 
-import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { CircularProgress } from '@mui/material';
-import { Country } from '@prisma/client';
-import CustomSelect from './custom-select';
 import { fetchCountries } from '@/app/store/countires.slice';
 import { AppDispatch, RootState } from '@/app/store/store';
-import { SelectChangeEvent } from '@mui/material';
+import { CircularProgress, SelectChangeEvent } from '@mui/material';
+import { Country } from '@prisma/client';
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import CustomSelect from './custom-select';
 
 interface CountrySelectProps {
   name: string;
@@ -24,18 +23,18 @@ interface CountrySelectProps {
 const CountrySelect: React.FC<CountrySelectProps> = (props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { list: countries, loading: countriesLoading } = useSelector((state: RootState) => state.countriesReducer);
-  
+
   React.useEffect(() => {
     if (countries.length === 0) {
       dispatch(fetchCountries());
     }
   }, [dispatch, countries.length]);
-  
+
   const countryOptions = countries.map((country: Country) => ({
     label: country.name,
     value: country.id,
   }));
-  
+
   if (countriesLoading) {
     return <CircularProgress size={20} sx={{ mt: 1, mb: 1 }} />;
   }
@@ -44,7 +43,7 @@ const CountrySelect: React.FC<CountrySelectProps> = (props) => {
     <CustomSelect
       label="Country"
       options={countryOptions}
-      {...props} 
+      {...props}
     />
   );
 };

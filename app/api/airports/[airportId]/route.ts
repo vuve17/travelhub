@@ -9,7 +9,6 @@ export async function GET(
 ) {
   const { airportId } = await params;
   const id = parseInt(airportId);
-  console.log("id: ", id);
 
   if (isNaN(id)) {
     return NextResponse.json(
@@ -48,7 +47,6 @@ export async function PUT(
   { params }: { params: Promise<{ airportId: string }> }
 ) {
   const { airportId } = await params;
-  console.log("Updating airport with id:", airportId);
   if (!airportId) {
     return NextResponse.json(
       { message: "Invalid airport ID in path." },
@@ -56,12 +54,9 @@ export async function PUT(
     );
   }
   const id = parseInt(airportId);
-  console.log("Updating airport with id:", airportId);
 
   try {
     const body = (await request.json()) as CreateAirportData;
-
-    console.log("Request body:", body);
 
     if (
       !body.name ||

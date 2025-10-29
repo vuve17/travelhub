@@ -17,9 +17,6 @@ import { notFound, useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
-// Definicija tipa za podatke rute (preuzeta iz API-ja)
-// Predpostavljamo da RouteWithRelations ima totalDurationMin, operator, fromAirport, toAirport
-// i sve relacije s Country.
 
 const RouteDetailPage: React.FC = () => {
   const params = useParams();
@@ -97,11 +94,10 @@ const RouteDetailPage: React.FC = () => {
       if (!routeId) {
         throw new Error("Invalid route ID.");
       }
-      // Koristimo DELETE /api/routes/[routeId] endpoint
       await axios.delete(`/api/routes/${routeId}`);
 
       dispatch(showSnackbar({ message: "Route successfully deleted", severity: "success" }))
-      router.push('/protected/routes'); // Preusmjeri na listu ruta
+      router.push('/protected/routes');
     } catch (error) {
       handleAxiosError(error, dispatch, "Error deleting route");
       throw error;
@@ -121,18 +117,15 @@ const RouteDetailPage: React.FC = () => {
     return notFound();
   }
 
-  // Priprema podataka za mapu (Polazni i Dolazni aerodrom)
   const routeLocations = [
     { lat: route.fromAirport.latitude, lng: route.fromAirport.longitude },
     { lat: route.toAirport.latitude, lng: route.toAirport.longitude },
   ];
 
-  // Formatiranje trajanja leta
   const formattedDuration = route.totalDurationMin
     ? formatFlightTime(convertMinutesToTime(route.totalDurationMin))
     : 'N/A';
 
-  // Konstrukcija naslova stranice
   const pageTitle = `${route.fromAirport.code} → ${route.toAirport.code} (Operator: ${route.operator.name})`;
 
   return (
@@ -143,7 +136,8 @@ const RouteDetailPage: React.FC = () => {
         onCancel={() => setIsDeleteModalOpen(false)}
         yesText="Confirm Deletion"
         noText='Cancel'
-        dialogText={`Are you sure you want to delete the route from ${route.fromAirport.code} to ${route.toAirport.code} by ${route.operator.name}?`}
+        question={`Are you sure you want to delete the route from ${route.fromAirport.code} to ${route.toAirport.code} by ${route.operator.name}?`}
+        dialogText='Deleting this route cannot be undone.'
       />
 
       {isEditModalOpen && route && (
@@ -151,13 +145,7 @@ const RouteDetailPage: React.FC = () => {
           onClose={handleModalClose}
           onSubmit={handleEditSubmit}
           mode='edit'
-          initialValues={{
-            id: route.id,
-            fromAirportId: route.fromAirport.id,
-            toAirportId: route.toAirport.id,
-            airlineId: route.operator.id,
-            // totalDurationMin se proračunava na backendu
-          }}
+          initialValues={route}
         />
       )}
 
@@ -177,15 +165,12 @@ const RouteDetailPage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Route Visualization
             </Typography>
-
-            {/* Karta */}
             <Map
               readOnly={true}
               onLocationSelect={() => { }}
               initialLocation={routeLocations}
               routesToDraw={routeLocations}
 
-            // Opcionalno: dodajte zoom kontrolu ako je karta velika
             />
           </Paper>
 
@@ -255,33 +240,25 @@ const RouteDetailPage: React.FC = () => {
                 </Link>
               </Box>
 
-              {/* ⭐️ STRELICA (SEPARATOR) */}
               <Box
                 sx={{
                   display: 'flex',
-                  // ⭐️ Vertikalni Stack na malim ekranima, Horizontalni na velikim
                   flexDirection: { xs: 'column', md: 'row' },
                   alignItems: 'center',
                   justifyContent: 'center',
-                  // Dodan razmak između trajanja i strelica
                   gap: { xs: 1, md: 2 },
-                  py: { xs: 2, md: 0 }, // Dodatni vertikalni padding za odvajanje na malim ekranima
+                  py: { xs: 2, md: 0 },
                 }}
               >
-                {/* 1. SEPARATOR (Crtica/Ikonica) */}
                 <Remove
-
                   color="primary"
                   sx={{
                     fontSize: 30,
-                    // ⭐️ Rotira se iz vertikalne linije (I) u horizontalnu (-)
                     transform: { xs: 'rotate(90deg)', md: 'rotate(0deg)' }
                   }}
                 />
 
-                {/* 2. PRIKAZ TRAJANJA VREMENA */}
                 <Box sx={{ textAlign: 'center' }}>
-
                   <Typography
                     variant="h6"
                     fontWeight={700}
@@ -292,18 +269,15 @@ const RouteDetailPage: React.FC = () => {
                   </Typography>
                 </Box>
 
-                {/* 3. STRELICA (ArrowForward) */}
                 <ArrowForward
                   color="primary"
                   sx={{
                     fontSize: 40,
-                    // Rotacija za 90 stupnjeva (dolje) na XS/SM, nema rotacije na MD
                     transform: { xs: 'rotate(90deg)', md: 'rotate(0deg)' }
                   }}
                 />
               </Box>
 
-              {/* === KARTICA 2: DOLAZNI AERODROM === */}
               <Box >
                 <Link href={`/protected/airports/${route.toAirport.id}`} passHref style={{ textDecoration: 'none' }}>
                   <Paper elevation={0} sx={{
@@ -326,7 +300,6 @@ const RouteDetailPage: React.FC = () => {
                   </Paper>
                 </Link>
               </Box>
-
             </Box>
           </Paper>
         </Grid>

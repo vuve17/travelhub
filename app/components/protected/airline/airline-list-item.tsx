@@ -1,13 +1,11 @@
-// src/app/components/protected/airline/AirlineListItem.tsx (Adapted)
-
 'use client';
 
-import React from 'react';
-import { Box, Card, Typography, IconButton, useTheme } from '@mui/material';
-import Link from 'next/link';
 import { AirlineWithCountry } from '@/app/types/airline-with-country.type';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import { Box, Card, IconButton, Typography, useTheme } from '@mui/material';
+import Link from 'next/link';
+import React from 'react';
 
 interface AirlineListItemProps {
   item: AirlineWithCountry;

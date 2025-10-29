@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 import prisma from "@/app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
@@ -29,33 +29,32 @@ export async function GET(
         { status: 404 }
       );
     }
-    
+
     const routes = await prisma.route.findMany({
       where: {
-        fromAirportId: id, // Filter: Polazište rute je traženi airportId
+        fromAirportId: id,
       },
       include: {
         operator: true,
-        fromAirport: { 
-            include: { 
-                country: true 
-            } 
+        fromAirport: {
+          include: {
+            country: true,
+          },
         },
-        toAirport: { 
-            include: { 
-                country: true 
-            } 
+        toAirport: {
+          include: {
+            country: true,
+          },
         },
       },
       orderBy: {
         toAirport: {
-            code: 'asc',
-        }
-      }
+          code: "asc",
+        },
+      },
     });
 
     return NextResponse.json(routes);
-
   } catch (error) {
     console.error(`Error fetching routes for airport ${id}:`, error);
     return NextResponse.json(
