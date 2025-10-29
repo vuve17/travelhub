@@ -45,7 +45,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProperties> = ({
             minHeight: { xs: '100vh', sm: 'auto' },
             margin: { xs: 0, sm: 'auto' },
             padding: '65px 40px',
-            backgroundColor: theme.palette.background.paper, 
+            backgroundColor: theme.palette.background.paper,
           },
           onClick: (e: React.MouseEvent<HTMLElement, MouseEvent>) =>
             e.stopPropagation(),
@@ -76,7 +76,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProperties> = ({
             <Typography
               fontWeight={600}
               fontSize={24}
-              color={theme.palette.text.primary} 
+              color={theme.palette.text.primary}
             >
               {question}
             </Typography>
@@ -86,21 +86,17 @@ const ConfirmationModal: React.FC<ConfirmationModalProperties> = ({
             id="alert-dialog-description"
             sx={{ mt: 2 }}
             textAlign="center"
+            color={theme.palette.text.primary}
+            fontSize={16}
           >
-            <Typography
-              fontWeight={500}
-              fontSize={16}
-              color={theme.palette.text.primary}
-            >
-              {dialogText}
-            </Typography>
+            {dialogText}
           </DialogContentText>
         </Box>
         <Box
           sx={{
             display: 'flex',
             flexDirection: { md: 'row', xs: 'column' },
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             alignItems: 'center',
             gap: 2,
             width: '100%',
@@ -109,15 +105,15 @@ const ConfirmationModal: React.FC<ConfirmationModalProperties> = ({
           <CustomButton
             text={noText}
             onClick={onCancel}
-            variant="outlined" 
-            color="inherit" 
+            variant="outlined"
+            color="inherit"
             sx={{
               minWidth: { xs: '100%', md: '230px' },
-              backgroundColor: theme.palette.action.hover, 
+              backgroundColor: theme.palette.action.hover,
               color: theme.palette.text.primary,
-              border: `1px solid ${theme.palette.divider}`, 
+              border: `1px solid ${theme.palette.divider}`,
               '&:hover': {
-                 backgroundColor: theme.palette.action.selected,
+                backgroundColor: theme.palette.action.selected,
               }
             }}
           />
@@ -127,9 +123,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProperties> = ({
             onClick={onConfirm}
             variant="contained"
             color="error"
-            sx={{ 
+            sx={{
               minWidth: { xs: '100%', md: '230px' },
-              color: theme.palette.error.contrastText, 
+              color: theme.palette.error.contrastText,
             }}
           />
         </Box>

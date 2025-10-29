@@ -48,35 +48,14 @@ model Route {
   id            Int     @id @default(autoincrement())
   fromAirportId Int
   toAirportId   Int    
-  airlineId     Int    
-
+  airlineId     Int
+  totalDurationMin  Int?
+  
   fromAirport Airport @relation("FromAirport", fields: [fromAirportId], references: [id], onDelete: Cascade)
   toAirport   Airport @relation("ToAirport", fields: [toAirportId], references: [id], onDelete: Cascade)
   operator    Airline @relation(fields: [airlineId], references: [id], onDelete: Cascade)
-  usedInItineraries ItinerarySegment[]
 
   @@unique([fromAirportId, toAirportId, airlineId])
-}
-
-
-model Itinerary {
-  id                Int                     @id @default(autoincrement())
-  name              String           
-  totalDurationMin  Int?
-  
-  segments          ItinerarySegment[]
-}
-
-model ItinerarySegment {
-  itineraryId       Int
-  routeId           Int
-  order             Int
-
-  itinerary         Itinerary               @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
-  route             Route                   @relation(fields: [routeId], references: [id])
-
-  @@id([itineraryId, order])
-  @@unique([itineraryId, routeId, order])
 }
 
 model User {

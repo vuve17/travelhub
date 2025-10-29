@@ -1,8 +1,8 @@
 'use client';
 
-import React, { ReactNode } from 'react';
-import { Stack, Typography, Box, Paper, useTheme } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { Box, Paper, Stack, Typography, useTheme } from '@mui/material';
+import React, { ReactNode } from 'react';
 import CustomButton from '../form/custom-buttton';
 
 
@@ -20,7 +20,7 @@ const ListWrapper: React.FC<ListWrapperProps> = ({
   heading,
   count = 0,
   buttonText = '',
-  onButtonClick,
+  onButtonClick = () => { },
   disabled = false,
   children,
   removeButton = false
@@ -32,29 +32,30 @@ const ListWrapper: React.FC<ListWrapperProps> = ({
     <Paper
       elevation={0}
       sx={{
-        height: 'calc(100vh - 100px)',
+        height: { xs: "100%", md: 'calc(100vh - 100px)' },
         display: 'flex',
         flexDirection: 'column',
-        border: `1px solid ${theme.palette.divider}`,
-        minWidth: {
-          sm: '100vw',
-          md: 'auto',
-        },
+        border: { xs: `1px solid transparent`, md: `1px solid ${theme.palette.divider}` },
+        // minWidth: {
+        //   sm: '100vw',
+        //   md: 'auto',
+        // },
         p: 4
       }}
     >
       <Stack
-        direction="row"
+        direction={{ sm: "column", md: "row" }}
         justifyContent="space-between"
-        alignItems="center"
+        gap={{ xs: 2, sm: 2, md: 0 }}
+        // alignItems="center"
         sx={{
           p: 2,
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          borderBottom: `3px solid ${theme.palette.divider}`,
           bgcolor: theme.palette.background.paper,
           flexShrink: 0,
         }}
       >
-        <Typography variant="h4">
+        <Typography variant="h4" fontWeight={600}>
           {fullHeading}
         </Typography>
 

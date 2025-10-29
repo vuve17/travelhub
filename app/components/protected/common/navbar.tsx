@@ -1,28 +1,28 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useThemeMode } from '@/app/components/theme/theme-provider';
+import Logo from '@/public/logo';
+import MenuIcon from '@mui/icons-material/Menu';
+import NightsStayIcon from '@mui/icons-material/NightsStay';
+import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import {
   AppBar,
-  Toolbar,
-  Button,
-  IconButton,
   Box,
+  Button,
   Drawer,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
-  useTheme,
-  useMediaQuery,
+  Toolbar,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import NightsStayIcon from '@mui/icons-material/NightsStay';
-import Logo from '@/public/logo';
-import { useThemeMode } from '@/app/components/theme/theme-provider';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import React, { useState } from 'react';
 
 const navItems = [
   { title: 'Routes', path: '/protected/routes' },
@@ -114,7 +114,9 @@ const Navbar: React.FC = () => {
   );
 
   return (
-    <AppBar component="nav" position="static" sx={{ bgcolor: theme.palette.background.paper, boxShadow: theme.shadows[2] }}>
+    <AppBar component="nav" position="static" sx={{
+      bgcolor: theme.palette.background.paper, boxShadow: theme.shadows[2], borderBottom: { xs: `2px solid ${theme.palette.primary.main}`, md: `1px solid transparent` },
+    }}>
       <Toolbar sx={{
         paddingLeft: { xs: 2, sm: 3 },
         paddingRight: { xs: 2, sm: 3 },
@@ -156,7 +158,7 @@ const Navbar: React.FC = () => {
                     fontWeight: isActive ? 600 : 400,
                     '&:hover': {
                       color: theme.palette.primary.main,
-                      bgcolor: theme.palette.action.hover, 
+                      bgcolor: theme.palette.action.hover,
                     }
                   }}
                 >

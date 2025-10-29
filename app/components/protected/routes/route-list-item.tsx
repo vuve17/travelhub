@@ -1,75 +1,52 @@
 'use client';
 
-import React from 'react';
-import { Box, Typography, IconButton, Card, Chip, useTheme, Paper } from '@mui/material';
+import { convertMinutesToTime, formatFlightTime } from '@/app/lib/haversine-formula';
+import { RouteWithRelations } from '@/app/types/route-with-relations.type';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import { Box, Card, Chip, IconButton, Typography, useTheme } from '@mui/material';
 import Link from 'next/link';
-import { RouteWithRelations } from '@/app/types/route-with-relations.type';
-import { ItineraryWithRoutes } from '@/app/types/Itinerary.type';
-import { formatFlightTime, convertMinutesToTime } from '@/app/lib/haversine-formula';
+import React from 'react';
 
 
 interface RouteListItemProps {
-  item: ItineraryWithRoutes;
-  onEdit: (route: RouteWithRelations) => void;
-  onDelete: (route: RouteWithRelations) => void;
+  item: RouteWithRelations;
+  onEdit?: (route: RouteWithRelations) => void;
+  onDelete?: (route: RouteWithRelations) => void;
   disableActions?: boolean;
 }
 
 const RouteListItem: React.FC<RouteListItemProps> = ({ item, onEdit, onDelete, disableActions = false }) => {
   const theme = useTheme();
 
-  const sortedSegments = [...item.segments].sort((a, b) => a.order - b.order);
-  // console.log('Sorted Segments:', sortedSegments, sortedSegments.length, sortedSegments[0].route);
-if (sortedSegments.length === 0 || !sortedSegments[0] || !sortedSegments[0].route) {
-      return (
-      <Paper elevation={0} sx={{ p: 2, border: (t) => `1px solid ${t.palette.error.main}` }}>
-        <Typography color="error">Error: No route data available for this itinerary.</Typography>
-      </Paper>
-    );
-  }
+  const route = item;
 
-  // Određivanje prve rute (za akcije i početak putanje)
-  const initialRoute = sortedSegments[0].route;
-  
-  // 1. Inicijalizacija putanje s polazištem prve rute
-  let routePathCodes = initialRoute.fromAirport.code;
-  let routePathNames = `${initialRoute.fromAirport.name} (${initialRoute.fromAirport.city})`;
-
-  // 2. Prolazak kroz segmente i DODAVANJE SAMO ODREDIŠTA
-  // Petlja kreće od prvog segmenta i dodaje njegovo odredište,
-  // zatim odredište drugog, i tako dalje.
-  for (const segment of sortedSegments) {
-    if (segment.route) {
-      // Svaki put dodajemo odredište, čime se formira ispravan niz A → B → C
-      // A (inicijalizacija) + → B + → C
-      routePathCodes += ` → ${segment.route.toAirport.code}`;
-      routePathNames += ` → ${segment.route.toAirport.name} (${segment.route.toAirport.city})`;
-    }
-  }
-
-  // 3. Ostatak logike ostaje nepromijenjen
-  const route = initialRoute;
+  const routePathCodes = `${route.fromAirport.code} → ${route.toAirport.code}`;
+  const routePathNames = `${route.fromAirport.name} (${route.fromAirport.city}) → ${route.toAirport.name} (${route.toAirport.city})`;
   const operatorName = route.operator.name;
 
-  const formattedDuration = item.totalDurationMin
-    ? formatFlightTime(convertMinutesToTime(item.totalDurationMin))
+  const formattedDuration = route.totalDurationMin
+    ? formatFlightTime(convertMinutesToTime(route.totalDurationMin))
     : 'N/A';
 
-  const routeToPass = route as RouteWithRelations;
+  const routeDetailHref = `/protected/routes/${item.id}`;
+
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onEdit(routeToPass);
+    if (onEdit) {
+      onEdit(route);
+    }
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onDelete(routeToPass);
+    if (onDelete) {
+      onDelete(route);
+    }
   };
 
   return (
@@ -90,10 +67,9 @@ if (sortedSegments.length === 0 || !sortedSegments[0] || !sortedSegments[0].rout
       }}
       component={Link}
       elevation={0}
-      href={`/protected/itineraries/${item.id}`}
+      href={routeDetailHref}
     >
       <Box>
-        {/* Primarni naslov: Imena Aerodroma */}
         <Typography
           variant="h5"
           fontWeight={600}
@@ -103,12 +79,10 @@ if (sortedSegments.length === 0 || !sortedSegments[0] || !sortedSegments[0].rout
           {routePathNames}
         </Typography>
 
-        {/* Sekundarni naslov: KODOVI AERODROMA */}
         <Typography variant="body1" fontWeight={400} color="text.secondary">
           {routePathCodes}
         </Typography>
 
-        {/* PRIKAZ TRAJANJA I OPERATORA */}
         <Box display="flex" alignItems="center" gap={3} marginTop={2} flexWrap="wrap">
           <Chip
             label={`Duration: ${formattedDuration}`}

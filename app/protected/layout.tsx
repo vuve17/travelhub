@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react'; // ⭐️ Import useEffect and useState
-import Navbar from '../components/protected/common/navbar';
-import { Wrapper, Status } from '@googlemaps/react-wrapper';
+import { Status, Wrapper } from '@googlemaps/react-wrapper';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import React, { useEffect, useState } from 'react'; // ⭐️ Import useEffect and useState
+import GlobalSnackbar from '../components/protected/common/global-snackbar';
+import Navbar from '../components/protected/common/navbar';
 import { ReduxProvider } from '../store/redux-provider';
 
 const render = (status: Status) => {
@@ -36,7 +37,7 @@ export default function ProtectedLayout({
 }) {
   // ⭐️ 1. State to track client mount
   const [hasMounted, setHasMounted] = useState(false);
-  
+
   useEffect(() => {
     const rafId = requestAnimationFrame(() => setHasMounted(true));
     return () => cancelAnimationFrame(rafId);
@@ -46,14 +47,34 @@ export default function ProtectedLayout({
 
   const MapsWrapper = hasMounted ? (
     <Wrapper apiKey={NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} render={render}>
-      <main className="flex-grow p-4 md:p-8">
+      <Box
+        component="main" // Koristimo Box kao zamjenu za 'main' tag
+        className="flex-grow md:p-8 sm:p-0 xs:p-0"
+        sx={{
+          bgcolor: {
+            xs: 'background.paper',
+            sm: 'background.paper',
+            md: 'background.default', // Vraća na default boju za md i veće
+          },
+        }}
+      >
         {children}
-      </main>
+      </Box>
     </Wrapper>
   ) : (
-    <main className="flex-grow p-4 md:p-8">
+    <Box
+      component="main" // Koristimo Box kao zamjenu za 'main' tag
+      className="flex-grow md:p-8 sm:p-0 xs:p-0"
+      sx={{
+        bgcolor: {
+          xs: 'background.paper',
+          sm: 'background.paper',
+          md: 'background.default', // Vraća na default boju za md i veće
+        },
+      }}
+    >
       {children}
-    </main>
+    </Box>
   );
 
   return (
@@ -62,6 +83,7 @@ export default function ProtectedLayout({
         <Navbar />
       </header>
       <ReduxProvider>
+        <GlobalSnackbar />
         {MapsWrapper} {/* ⭐️ 4. Use the conditional Wrapper */}
       </ReduxProvider>
     </div>

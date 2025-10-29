@@ -65,9 +65,54 @@ export async function PUT(
     const baseCountryIdNum = Number(baseCountryId);
     if (isNaN(baseCountryIdNum) || baseCountryIdNum <= 0) {
       return NextResponse.json(
-        { message: "Invalid Base Country ID format." },
+        { message: "Invalid Base Country ID." },
         { status: 400 }
       );
+    }
+
+    const currentAirline = await prisma.airline.findUnique({
+        where: { id },
+        select: { servicedAirports: { select: { id: true } } }
+    });
+
+    if (!currentAirline) {
+        return NextResponse.json({ message: `Airline with ID ${id} not found.` }, { status: 404 });
+    }
+
+    const currentServicedIds = currentAirline.servicedAirports.map(a => a.id);
+
+    const servicedAirportIdNums = servicedAirportIds ? servicedAirportIds.map(Number) : [];
+    
+    const removedAirportIds = currentServicedIds.filter(
+        currentId => !servicedAirportIdNums.includes(currentId)
+    );
+
+    if (removedAirportIds.length > 0) {
+        const conflictingRoutes = await prisma.route.findMany({
+            where: {
+                airlineId: id,
+                OR: [
+                    { fromAirportId: { in: removedAirportIds } },
+                    { toAirportId: { in: removedAirportIds } },
+                ],
+            },
+            select: { 
+                id: true, 
+                fromAirport: { select: { name: true, code: true} },
+                toAirport: { select: { name: true, code: true } }
+            },
+            take: 1,
+        });
+
+        if (conflictingRoutes.length > 0) {
+            const route = conflictingRoutes[0];
+            return NextResponse.json(
+                { 
+                    message: `Cannot remove an airport that is part of an active route operated by this airline. Route ${route.fromAirport.name} (${route.fromAirport.code}) -> ${route.toAirport.name} (${route.toAirport.code}) prevents deletion.` 
+                },
+                { status: 409 }
+            );
+        }
     }
 
     const airportUpdate = {

@@ -1,20 +1,23 @@
 'use client';
 
+import AirlineModal from '@/app/components/protected/airline/airline-modal'; // Assuming this component exists
+import AirportListItem from '@/app/components/protected/airport/airport-list-item';
 import ConfirmationModal from '@/app/components/protected/common/confirmation-modal';
 import ListWrapper from '@/app/components/protected/common/list-wrapper';
 import PageHeading from '@/app/components/protected/common/page-heading';
+import Map from '@/app/components/protected/map/map';
+import RouteListItem from '@/app/components/protected/routes/route-list-item';
 import { handleAxiosError } from '@/app/lib/handle-axios-error';
+import { showSnackbar } from '@/app/store/notification.slice';
 import { AirlineSubmissionType } from '@/app/types/airline-submission.type';
 import { AirportWithCountry } from '@/app/types/airport-with-country.type';
+import { RouteWithRelations } from '@/app/types/route-with-relations.type';
 import { Alert, Box, CircularProgress, Grid, Paper, Typography } from '@mui/material';
-import { Airline, Airport } from '@prisma/client';
-import axios from 'axios';
-import Link from 'next/link';
+import { Airline } from '@prisma/client';
+import axios, { AxiosError } from 'axios';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import AirlineModal from '@/app/components/protected/airline/airline-modal'; // Assuming this component exists
-import AirportListItem from '@/app/components/protected/airport/airport-list-item';
-import Map from '@/app/components/protected/map/map';
+import { useDispatch } from 'react-redux';
 
 
 type AirlineWithCountry = Airline & { baseCountry: { name: string } };
@@ -22,6 +25,7 @@ type AirlineWithCountry = Airline & { baseCountry: { name: string } };
 const AirlineDetailPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
+  const dispatch = useDispatch()
   const airlineId = params.airlineId ? String(params.airlineId) : null;
   const isValidId = airlineId && !isNaN(parseInt(airlineId));
 
@@ -36,6 +40,9 @@ const AirlineDetailPage: React.FC = () => {
   const [allAirports, setAllAirports] = useState<AirportWithCountry[]>([]);
   const [allAirportsLoading, setAllAirportsLoading] = useState<boolean>(false);
 
+  const [routes, setRoutes] = useState<RouteWithRelations[]>([]);
+  const [routesLoading, setRoutesLoading] = useState<boolean>(false);
+
   // Function to fetch all airports (used to populate the dropdown options in the edit modal)
   const fetchAllAirports = async () => {
     setAllAirportsLoading(true);
@@ -44,10 +51,39 @@ const AirlineDetailPage: React.FC = () => {
       setAllAirports(response.data);
     } catch (error) {
       console.error('Failed to fetch all airports:', error);
+      const err = error as AxiosError;
+      console.error("Failed to fetch airline data:", err);
+      const errorMessage =
+        (err.response?.data as { message?: string })?.message ||
+        err.message ||
+        "";
+      const snackbarMessage = `Error fetching airline${errorMessage ? `: ${errorMessage}` : ''}`;
+      dispatch(showSnackbar({ message: snackbarMessage, severity: "error" }));
     } finally {
       setAllAirportsLoading(false);
     }
   };
+
+  const fetchRoutes = async (id: number) => {
+    try {
+      setRoutesLoading(true)
+      const routesRes = await axios.get<RouteWithRelations[]>(`/api/airlines/${id}/routes`);
+      setRoutes(routesRes.data)
+    } catch (error) {
+      console.log("error")
+      const err = error as AxiosError;
+      console.error("Failed to fetch airline data:", err);
+      const errorMessage =
+        (err.response?.data as { message?: string })?.message ||
+        err.message ||
+        "";
+      const snackbarMessage = `Error fetching airline${errorMessage ? `: ${errorMessage}` : ''}`;
+      dispatch(showSnackbar({ message: snackbarMessage, severity: "error" }));
+    } finally {
+      setRoutesLoading(false)
+    }
+
+  }
 
   const fetchAirlineData = async () => {
     if (!airlineId || !isValidId) {
@@ -57,15 +93,21 @@ const AirlineDetailPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // 1. Fetch Airline Details
       const airlineRes = await axios.get<AirlineWithCountry>(`/api/airlines/${airlineId}`);
       setAirline(airlineRes.data);
-
-      // 2. Fetch Serviced Airports
       const airportsRes = await axios.get<AirportWithCountry[]>(`/api/airlines/${airlineId}/airports`);
       setAirports(airportsRes.data);
+      await fetchRoutes(+airlineId)
+
     } catch (error) {
-      console.error("Failed to fetch airline data:", error);
+      const err = error as AxiosError;
+      console.error("Failed to fetch airline data:", err);
+      const errorMessage =
+        (err.response?.data as { message?: string })?.message ||
+        err.message ||
+        "";
+      const snackbarMessage = `Error fetching airline${errorMessage ? `: ${errorMessage}` : ''}`;
+      dispatch(showSnackbar({ message: snackbarMessage, severity: "error" }));
       setAirline(null);
     } finally {
       setLoading(false);
@@ -103,9 +145,11 @@ const AirlineDetailPage: React.FC = () => {
       }
       const response = await axios.put<Airline>(`/api/airlines/${+id}`, rest);
       await handleSuccess();
+      dispatch(showSnackbar({ message: "Airline successfuly modifyed", severity: "success" }))
       return response.data;
     } catch (error) {
-      throw new Error(handleAxiosError(error));
+      handleAxiosError(error, dispatch, "Error modifying airline")
+      throw error
     }
   };
 
@@ -115,10 +159,12 @@ const AirlineDetailPage: React.FC = () => {
         throw new Error("Invalid airline ID.");
       }
       const response = await axios.delete<Airline>(`/api/airlines/${airlineId}`);
+      dispatch(showSnackbar({ message: "Airline successfuly deleted", severity: "success" }))
       router.push('/protected/airlines');
       return response.data;
     } catch (error) {
-      throw new Error(handleAxiosError(error));
+      handleAxiosError(error, dispatch, "Error deleting airline")
+      throw error
     }
   };
 
@@ -172,32 +218,22 @@ const AirlineDetailPage: React.FC = () => {
         />
       )}
 
-      <PageHeading
-        title={`${airline.name} (Base: ${airline.baseCountry.name})`}
-        onEditClick={handleEdit}
-        onDeleteClick={() => setIsDeleteModalOpen(true)}
-      />
 
-      <Grid container spacing={4}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper elevation={0} sx={{ p: 3, border: (t) => `1px solid ${t.palette.divider}` }}>
-            <Typography variant="h6" gutterBottom>
-              Basic Information
-            </Typography>
 
-            <Box mb={2}>
-              <Typography variant="body2" color="text.secondary">Name:</Typography>
-              <Typography variant="body1" fontWeight="medium">{airline.name}</Typography>
-            </Box>
+      <Grid container spacing={{ xs: 0, md: 4 }}>
 
-            <Box mb={2}>
-              <Typography variant="body2" color="text.secondary">Base Country:</Typography>
-              <Typography variant="body1" fontWeight="medium">{airline.baseCountry.name}</Typography>
-            </Box>
-          </Paper>
+        <Grid size={12}>
 
-          <Box mt={4}>
-            <Paper elevation={0} sx={{ p: 3, border: (t) => `1px solid ${t.palette.divider}` }}>
+          <PageHeading
+            title={`${airline.name} (Base: ${airline.baseCountry.name})`}
+            onEditClick={handleEdit}
+            onDeleteClick={() => setIsDeleteModalOpen(true)}
+          />
+        </Grid>
+        <Grid size={12}>
+
+          <Box>
+            <Paper elevation={0} sx={{ p: 3, border: { sm: "none", md: (t) => `1px solid ${t.palette.divider}` } }}>
               <Typography variant="h6" gutterBottom>
                 Airport Map
               </Typography>
@@ -257,6 +293,30 @@ const AirlineDetailPage: React.FC = () => {
               ))
             )}
           </ListWrapper>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box mb={4}>
+            <ListWrapper
+              heading="Operated Routes"
+              count={routes.length}
+              removeButton={true}
+            >
+              {routes.length === 0 ? (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  This airline currently does not operate any routes.
+                </Alert>
+              ) : (
+                routes.map((route) => (
+                  <RouteListItem
+                    key={route.id}
+                    item={route}
+                    disableActions={true}
+                  />
+                ))
+              )}
+            </ListWrapper>
+          </Box>
         </Grid>
       </Grid>
     </>

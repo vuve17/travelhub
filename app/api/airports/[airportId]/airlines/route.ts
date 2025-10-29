@@ -7,7 +7,7 @@ import { AirlineWithCountry } from "@/app/types/airline-with-country.type";
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ airportId: string }> }
-): Promise<NextResponse<AirlineWithCountry[]>> {
+) {
   const { airportId } = await params;
   const id = parseInt(airportId);
 

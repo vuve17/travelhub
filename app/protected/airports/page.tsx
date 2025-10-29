@@ -1,19 +1,20 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
-import { AppDispatch, RootState } from '@/app/store/store';
 import AirportListItem from '@/app/components/protected/airport/airport-list-item';
-import { Airport } from '@prisma/client';
-import CustomButton from '@/app/components/protected/form/custom-buttton';
-import AddIcon from '@mui/icons-material/Add';
 import AirportModal from '@/app/components/protected/airport/airport-modal';
-import axios from 'axios';
-import { AirportWithCountry } from '@/app/types/airport-with-country.type';
 import ConfirmationModal from '@/app/components/protected/common/confirmation-modal';
 import ListWrapper from '@/app/components/protected/common/list-wrapper';
+import CustomButton from '@/app/components/protected/form/custom-buttton';
 import { handleAxiosError } from '@/app/lib/handle-axios-error';
+import { showSnackbar } from '@/app/store/notification.slice';
+import { AppDispatch } from '@/app/store/store';
+import { AirportWithCountry } from '@/app/types/airport-with-country.type';
+import AddIcon from '@mui/icons-material/Add';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { Airport } from '@prisma/client';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 
 const AirportListPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,6 +32,7 @@ const AirportListPage: React.FC = () => {
       setAirports(response.data);
     } catch (error) {
       console.error("Failed to fetch airports:", error);
+      // dispatch(showSnackbar({ message: `Airport successfuly created`, severity: "success" }))
       setAirports([]);
     } finally {
       setAirportsLoading(false);
@@ -73,9 +75,11 @@ const AirportListPage: React.FC = () => {
     try {
       const response = await axios.post<Airport>('/api/airports', values);
       handleSuccess();
+      dispatch(showSnackbar({ message: `Airport successfuly created`, severity: "success" }))
       return response.data;
     } catch (error) {
-      throw new Error(handleAxiosError(error));
+      handleAxiosError(error, dispatch, "Error creating airport")
+      throw error
     }
   };
 
@@ -85,9 +89,11 @@ const AirportListPage: React.FC = () => {
       const { country, ...rest } = values;
       const response = await axios.put<Airport>(`/api/airports/${+values.id}`, rest);
       handleSuccess();
+      dispatch(showSnackbar({ message: `Airport successfuly modifyed`, severity: "success" }))
       return response.data;
     } catch (error) {
-      throw new Error(handleAxiosError(error));
+      handleAxiosError(error, dispatch, "Error modifying airport")
+      throw error
     }
   };
 
@@ -95,9 +101,11 @@ const AirportListPage: React.FC = () => {
     try {
       const response = await axios.delete<Airport>(`/api/airports/${id}`);
       handleSuccess();
+      dispatch(showSnackbar({ message: `Airport successfuly deleted`, severity: "success" }))
       return response.data;
     } catch (error) {
-      throw new Error(handleAxiosError(error));
+      handleAxiosError(error, dispatch, "Error deleting airport")
+      throw error
     }
   };
 

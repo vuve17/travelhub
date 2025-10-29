@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
-import { Box, Typography, IconButton } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import { Box, IconButton, Typography } from '@mui/material';
+import React from 'react';
 
 interface PageHeadingProps {
   title: string;
@@ -20,19 +20,43 @@ const PageHeading: React.FC<PageHeadingProps> = ({
 }) => {
   return (
     <Box
-      sx={{
+      sx={(theme) => ({ // ⭐️ Koristite arrow funkciju za cijeli SX prop
         display: 'flex',
-        justifyContent: 'space-between',
+        width: { xs: "100%", md: "auto" },
+        flexDirection: { xs: "column", md: "row" },
+        justifyContent: { xs: "flex-start", md: "space-between" },
         alignItems: 'center',
-        mb: 4,
-        pb: 1,
-        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-      }}
+        p: 2,
+        background: theme.palette.background.paper,
+
+        border: {
+          xs: 'none',
+          sm: 'none',
+
+          md: `1px solid ${theme.palette.divider}`,
+          lg: `1px solid ${theme.palette.divider}`,
+          xl: `1px solid ${theme.palette.divider}`,
+        }
+      })}
     >
-      <Typography variant="h4" component="h1" fontWeight={600}>
-        {title}
-      </Typography>
-      <Box display="flex" gap={1}>
+      <Box display={'flex'} justifyItems={'flex-start'}>
+        <Typography variant="h4" component="h1" fontWeight={600}>
+          {title}
+        </Typography>
+      </Box>
+
+      {/* Action Buttons Box */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1,
+          // Crucial Change: This pushes the buttons to the right edge on xs/sm screens
+          width: { xs: "100%", md: "auto" },
+          justifyContent: { xs: "flex-end", md: "flex-start" },
+          // Add some margin on xs/sm to separate title and buttons visually
+          mt: { xs: 1.5, md: 0 }
+        }}
+      >
         <IconButton
           color="primary"
           onClick={onEditClick}

@@ -2,10 +2,12 @@
 
 import { configureStore } from "@reduxjs/toolkit";
 import countriesReducer from "./countires.slice";
+import notificationReducer from "./notification.slice";
 
 export const store = configureStore({
   reducer: {
     countriesReducer: countriesReducer,
+    notificationReducer: notificationReducer,
   },
 });
 

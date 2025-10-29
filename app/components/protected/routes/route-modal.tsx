@@ -1,17 +1,16 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import { Formik, Form } from 'formik';
-import * as yup from 'yup';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, CircularProgress, Alert, IconButton, Box, Typography } from '@mui/material';
-import axios from 'axios';
-import RouteFormFields from './route-form';
-import { Airport, Airline } from '@prisma/client';
+import { AirportWithCountry } from '@/app/types/airport-with-country.type';
 import { CreateRouteType } from '@/app/types/create-route.type';
 import { RouteWithRelations } from '@/app/types/route-with-relations.type';
-import { AirportWithCountry } from '@/app/types/airport-with-country.type';
 import CloseIcon from '@mui/icons-material/Close';
-import { closeButtonStyle } from '@/app/lib/close-icon-style';
+import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
+import { Airline } from '@prisma/client';
+import axios from 'axios';
+import { Form, Formik } from 'formik';
+import React, { useEffect, useState } from 'react';
+import * as yup from 'yup';
+import RouteFormFields from './route-form';
 
 interface RouteModalProps {
   onClose: () => void;
@@ -31,37 +30,47 @@ const RouteModal: React.FC<RouteModalProps> = ({ onClose, onSubmit, mode, initia
   const isEdit = mode === 'edit';
   const title = isEdit ? 'Edit Single Route' : 'Create Single Route';
 
-  // Stanja za globalne podatke
-  const [allAirports, setAllAirports] = useState<AirportWithCountry[]>([]);
   const [airlines, setAirlines] = useState<Airline[]>([]);
   const [loadingAirlines, setLoadingAirlines] = useState(false);
   const [servicedAirports, setServicedAirports] = useState<AirportWithCountry[]>([]);
   const [servicedAirportsLoading, setServicedAirportsLoading] = useState(false);
+  // ⭐️ Novo stanje za kontrolu renderiranja Formik-a
+  const [isReadyToRenderFormik, setIsReadyToRenderFormik] = useState(false);
 
-  const open = true; // Modal je otvoren ako je renderiran
+  const open = true;
 
-  // ⭐️ Funkcija za dohvat svih aviokompanija (poziva se na mount)
+  const defaultInitialValues: CreateRouteType = {
+    airlineId: initialValues?.airlineId || 0,
+    fromAirportId: initialValues?.fromAirportId || 0,
+    toAirportId: initialValues?.toAirportId || 0,
+    id: initialValues?.id,
+  };
+
   const fetchAllAirlines = async () => {
     setLoadingAirlines(true);
     try {
       const response = await axios.get<Airline[]>(`/api/airlines`);
       setAirlines(response.data);
+      return response.data;
     } catch (error) {
       console.error("Failed to fetch all airlines:", error);
       setAirlines([]);
+      return [];
     } finally {
       setLoadingAirlines(false);
     }
   };
 
-  // ⭐️ Funkcija za dohvat servisiranih aerodroma (poziva se iz RouteFormFields na odabir)
+  // ⭐️ Funkcija za dohvat servisiranih aerodroma
   const fetchServicedAirports = async (id: number) => {
+    if (id <= 0) {
+      setServicedAirports([]);
+      return;
+    }
     setServicedAirportsLoading(true);
-    setServicedAirports([]); // Clear previous data while loading
     try {
-      // Koristi vaš API endpoint: /api/airlines/[id]/airports
       const response = await axios.get<AirportWithCountry[]>(`/api/airlines/${id}/airports`);
-      setServicedAirports(response.data); // Update the state in the modal
+      setServicedAirports(response.data);
     } catch (error) {
       console.error(`Failed to fetch serviced airports for airline ${id}:`, error);
       setServicedAirports([]);
@@ -70,23 +79,19 @@ const RouteModal: React.FC<RouteModalProps> = ({ onClose, onSubmit, mode, initia
     }
   };
 
-  // ⭐️ Na mount: dohvati sve aerodrome i sve aviokompanije
   useEffect(() => {
-    // 1. Fetch All Airports
-    axios.get<AirportWithCountry[]>('/api/airports')
-      .then(res => setAllAirports(res.data))
-      .catch(err => console.error("Failed to fetch all airports for map:", err));
+    const fetchInitialData = async () => {
+      await fetchAllAirlines();
 
-    // 2. Fetch All Airlines
-    fetchAllAirlines();
+      if (isEdit && defaultInitialValues.airlineId > 0) {
+        await fetchServicedAirports(defaultInitialValues.airlineId);
+      }
+
+      setIsReadyToRenderFormik(true);
+    };
+
+    fetchInitialData();
   }, []);
-
-  const defaultInitialValues: CreateRouteType = {
-    airlineId: initialValues?.airlineId || 0,
-    fromAirportId: initialValues?.fromAirportId || 0,
-    toAirportId: initialValues?.toAirportId || 0,
-    id: initialValues?.id,
-  };
 
   const handleSubmit = async (values: CreateRouteType, { setSubmitting, setErrors }: any) => {
     try {
@@ -97,6 +102,8 @@ const RouteModal: React.FC<RouteModalProps> = ({ onClose, onSubmit, mode, initia
       setSubmitting(false);
     }
   };
+
+  const showLoading = loadingAirlines || (isEdit && servicedAirportsLoading && !isReadyToRenderFormik);
 
   return (
     <Dialog
@@ -124,42 +131,50 @@ const RouteModal: React.FC<RouteModalProps> = ({ onClose, onSubmit, mode, initia
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      <Formik
-        initialValues={defaultInitialValues}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-        enableReinitialize={true}
-      >
-        {({ isSubmitting, errors, setFieldValue }) => (
-          <Form>
-            <DialogContent>
-              <RouteFormFields
-                allAirports={allAirports}
-                airlines={airlines}
-                airlinesLoading={loadingAirlines}
-                servicedAirports={servicedAirports}
-                servicedAirportsLoading={servicedAirportsLoading}
-                fetchServicedAirports={fetchServicedAirports}
-                formikSetFieldValue={setFieldValue}
-              />
-              {/* {errors.submit && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {errors.submit}
-                </Alert>
-              )} */}
-            </DialogContent>
-            <DialogActions>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={isSubmitting || allAirports.length === 0 || loadingAirlines}
-              >
-                {isSubmitting ? <CircularProgress size={24} /> : (isEdit ? 'Save Changes' : 'Create Route')}
-              </Button>
-            </DialogActions>
-          </Form>
-        )}
-      </Formik>
+
+      {showLoading || !isReadyToRenderFormik ? (
+        <DialogContent>
+          <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+            <CircularProgress />
+            <Typography sx={{ ml: 2 }}>Loading essential data...</Typography>
+          </Box>
+        </DialogContent>
+      ) : (
+        <Formik
+          initialValues={defaultInitialValues}
+          validationSchema={validationSchema}
+          onSubmit={handleSubmit}
+          enableReinitialize={true}
+        >
+          {({ isSubmitting, errors, setFieldValue }) => (
+            <Form>
+              <DialogContent>
+                <RouteFormFields
+                  airlines={airlines}
+                  servicedAirports={servicedAirports}
+                  servicedAirportsLoading={servicedAirportsLoading}
+                  fetchServicedAirports={(id) => {
+                    console.log("trigger")
+                    setFieldValue('fromAirportId', 0, false);
+                    setFieldValue('toAirportId', 0, false);
+                    fetchServicedAirports(id);
+                  }}
+                  isSubmitting={isSubmitting}
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isSubmitting || servicedAirports.length === 0}
+                >
+                  {isSubmitting ? <CircularProgress size={24} /> : (isEdit ? 'Save Changes' : 'Create Route')}
+                </Button>
+              </DialogActions>
+            </Form>
+          )}
+        </Formik>
+      )}
     </Dialog>
   );
 };

@@ -1,88 +1,67 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import { useFormikContext, FormikErrors, FormikTouched } from 'formik';
-import { CircularProgress, Box, Typography, Alert, Grid, SelectChangeEvent } from '@mui/material';
-import CustomSelect from '../form/custom-select'; // Koristimo vašu komponentu
-import Map from '../map/map';
-import axios from 'axios';
-import { Airline, Airport } from '@prisma/client';
-import { CreateRouteType } from '@/app/types/create-route.type';
-import { CoordinateType } from '@/app/types/coordinate.type'; // Koristimo vaš tip
 import { AirportWithCountry } from '@/app/types/airport-with-country.type';
+import { CoordinateType } from '@/app/types/coordinate.type';
+import { CreateRouteType } from '@/app/types/create-route.type';
+import { Alert, Box, CircularProgress, Grid, SelectChangeEvent, Typography } from '@mui/material';
+import { Airline } from '@prisma/client';
+import { useFormikContext } from 'formik';
+import React, { useEffect, useMemo, useRef } from 'react';
+import CustomSelect from '../form/custom-select';
+import Map from '../map/map';
 
 
 interface RouteFormFieldsProps {
-  allAirports: AirportWithCountry[];
-  airlines?: Airline[];
+  airlines: Airline[];
+  servicedAirports: AirportWithCountry[];
+  servicedAirportsLoading: boolean;
+  fetchServicedAirports: (id: number) => void;
+  isSubmitting: boolean;
 }
 
-const RouteFormFields: React.FC<RouteFormFieldsProps> = ({ allAirports }) => {
-  // Use the Formik context typed only with CreateRouteType so values/errors/touched keep correct types
-  const { values, isSubmitting, setFieldValue, errors, touched } =
+const RouteFormFields: React.FC<RouteFormFieldsProps> = ({
+  airlines,
+  servicedAirports,
+  servicedAirportsLoading,
+  fetchServicedAirports,
+  isSubmitting
+}) => {
+
+  const { values, setFieldValue, errors, touched } =
     useFormikContext<CreateRouteType>();
 
-  const [airlines, setAirlines] = useState<Airline[]>([]);
-  const [servicedAirports, setServicedAirports] = useState<AirportWithCountry[]>([]);
-  const [loadingOptions, setLoadingOptions] = useState(true);
-
-  // 1. Fetch all airlines
+  const prevAirlineIdRef = useRef(values.airlineId);
+  console.log("values: ", values)
   useEffect(() => {
-    async function fetchAirlines() {
-      try {
-        const res = await axios.get<Airline[]>('/api/airlines');
-        setAirlines(res.data);
-      } catch (error) {
-        console.error('Failed to fetch airlines:', error);
-      } finally {
-        setLoadingOptions(false);
+    if (values.airlineId !== prevAirlineIdRef.current) {
+      if (values.airlineId > 0) {
+
+        fetchServicedAirports(values.airlineId);
       }
+      prevAirlineIdRef.current = values.airlineId;
     }
-    fetchAirlines();
-  }, []);
+  }, [values.airlineId, fetchServicedAirports]);
 
-  useEffect(() => {
-    if (values.airlineId && values.airlineId > 0) {
-      setServicedAirports([]);
-      // Reset dependent fields immediately
-      setFieldValue('fromAirportId', 0, false);
-      setFieldValue('toAirportId', 0, false);
-
-      axios.get<AirportWithCountry[]>(`/api/airlines/${values.airlineId}/airports`)
-        .then(res => {
-          setServicedAirports(res.data);
-        })
-        .catch(error => {
-          console.error('Failed to fetch serviced airports:', error);
-          setServicedAirports([]);
-        });
-    } else {
-      setServicedAirports([]);
-    }
-  }, [values.airlineId, setFieldValue]);
-
-
-  // 3. Rukovanje promjenom CustomSelect polja
   const handleSelectChange = (event: SelectChangeEvent<string | number>, fieldName: keyof CreateRouteType) => {
-    // Vrijednost iz Select komponente je string ili number, Formik zahtijeva number za ID
     const value = typeof event.target.value === 'string'
       ? parseInt(event.target.value, 10) || 0
       : event.target.value;
-
     setFieldValue(fieldName, value);
+    if (fieldName === "airlineId") {
+      fetchServicedAirports(values.airlineId);
+    }
   };
 
-  // 4. Priprema podataka za mapu
 
-  // Markeri za sve aerodrome koje servisira aviokompanija
   const servicedAirportLocations: CoordinateType[] = servicedAirports.map(a => ({
     lat: a.latitude,
     lng: a.longitude,
   }));
 
-  // Koordinate za crtanje rute (A do B)
-  const selectedFrom = allAirports.find(a => a.id === values.fromAirportId);
-  const selectedTo = allAirports.find(a => a.id === values.toAirportId);
+
+  const selectedFrom = servicedAirports.find(a => a.id === values.fromAirportId);
+  const selectedTo = servicedAirports.find(a => a.id === values.toAirportId);
+  console.log("selectedFrom :selectedTo  ", selectedFrom, selectedTo)
 
   const routesToDraw: CoordinateType[] = [];
   if (selectedFrom && selectedTo) {
@@ -93,76 +72,79 @@ const RouteFormFields: React.FC<RouteFormFieldsProps> = ({ allAirports }) => {
   const airlineOptions = airlines.map(a => ({ value: a.id, label: a.name }));
   const airportOptions = servicedAirports.map(a => ({ value: a.id, label: `${a.code} - ${a.name}` }));
 
-  // Helper za provjeru greške i "touched" stanja
   const getError = (name: keyof CreateRouteType) => (touched[name] && errors[name] ? errors[name] : undefined);
 
+  const MapMemo = useMemo(() => {
+    console.log(routesToDraw, servicedAirportLocations)
+    return (
+      <Map
+        onLocationSelect={() => { }}
+        initialLocation={servicedAirportLocations}
+        routesToDraw={routesToDraw}
+        readOnly={true}
+      />
+    )
+  }, [routesToDraw, servicedAirportLocations])
 
   return (
     <Grid container spacing={2}>
-      {loadingOptions ? (
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Box display="flex" justifyContent="center" py={4}>
-            <CircularProgress />
-            <Typography sx={{ ml: 2 }}>Loading options...</Typography>
-          </Box>
-        </Grid>
-      ) : (
+      <Grid size={12}>
+        <CustomSelect
+          name="airlineId"
+          label="Operating Airline"
+          options={airlineOptions}
+          disabled={isSubmitting || airlineOptions.length === 0}
+          value={values.airlineId || 0}
+          onChange={(e) => handleSelectChange(e, 'airlineId')}
+          error={getError('airlineId')}
+        />
+      </Grid>
+
+      {values.airlineId > 0 && (
         <>
-          <Grid size={12}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <CustomSelect
-              name="airlineId"
-              label="Operating Airline"
-              options={airlineOptions}
-              disabled={isSubmitting}
-              value={values.airlineId || 0}
-              onChange={(e) => handleSelectChange(e, 'airlineId')}
-              error={getError('airlineId')}
+              name="fromAirportId"
+              label="Origin Airport (From)"
+              options={airportOptions}
+              disabled={isSubmitting || servicedAirportsLoading || airportOptions.length === 0}
+              value={values.fromAirportId || 0}
+              onChange={(e) => handleSelectChange(e, 'fromAirportId')}
+              error={getError('fromAirportId')}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <CustomSelect
+              name="toAirportId"
+              label="Destination Airport (To)"
+              options={airportOptions}
+              disabled={isSubmitting || servicedAirportsLoading || airportOptions.length === 0}
+              value={values.toAirportId || 0}
+              onChange={(e) => handleSelectChange(e, 'toAirportId')}
+              error={getError('toAirportId')}
             />
           </Grid>
 
-          {values.airlineId > 0 && (
-            <>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CustomSelect
-                  name="fromAirportId"
-                  label="Origin Airport (From)"
-                  options={airportOptions}
-                  disabled={isSubmitting || airportOptions.length === 0}
-                  value={values.fromAirportId || 0}
-                  onChange={(e) => handleSelectChange(e, 'fromAirportId')}
-                  error={getError('fromAirportId')}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CustomSelect
-                  name="toAirportId"
-                  label="Destination Airport (To)"
-                  options={airportOptions}
-                  disabled={isSubmitting || airportOptions.length === 0}
-                  value={values.toAirportId || 0}
-                  onChange={(e) => handleSelectChange(e, 'toAirportId')}
-                  error={getError('toAirportId')}
-                />
-              </Grid>
-
-              {airportOptions.length === 0 && (
-                <Grid size={12}>
-                  <Alert severity="warning">
-                    This airline does not service any airports. Assign airports to the airline first.
-                  </Alert>
-                </Grid>
-              )}
-
-              <Grid size={12}>
-                <Map
-                  onLocationSelect={() => { }}
-                  initialLocation={servicedAirportLocations} // Koristi ispravan prop name
-                  routesToDraw={routesToDraw}
-                  readOnly={true}
-                />
-              </Grid>
-            </>
+          {servicedAirportsLoading && (
+            <Grid size={12}>
+              <Box display="flex" justifyContent="center" mt={1}>
+                <CircularProgress size={20} />
+                <Typography sx={{ ml: 1, color: 'text.secondary' }}>Loading serviced airports...</Typography>
+              </Box>
+            </Grid>
           )}
+
+          {airportOptions.length === 0 && !servicedAirportsLoading && (
+            <Grid size={12}>
+              <Alert severity="warning">
+                This airline does not service any airports. Assign airports to the airline first.
+              </Alert>
+            </Grid>
+          )}
+
+          <Grid size={12}>
+            {MapMemo}
+          </Grid>
         </>
       )}
     </Grid>

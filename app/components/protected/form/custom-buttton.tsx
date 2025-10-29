@@ -1,5 +1,5 @@
-import React from 'react';
 import { Button, SxProps } from '@mui/material';
+import React from 'react';
 
 interface CustomButtonProps {
   text: string;
@@ -15,7 +15,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   text = '',
   color = 'primary',
   variant = 'contained',
-  onClick = () => {},
+  onClick = () => { },
   startIcon,
   disabled = false,
   sx = {},
@@ -24,13 +24,14 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     <Button
       variant={variant}
       color={color}
-      startIcon={startIcon} 
+      startIcon={startIcon}
       onClick={onClick}
       disabled={disabled}
       sx={{
         textTransform: 'none',
         padding: '10px 20px',
         fontSize: '1rem',
+        maxWidth: 200,
         ...sx
       }}
     >
